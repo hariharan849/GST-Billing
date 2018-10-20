@@ -6,8 +6,7 @@ To Start:
   
 Pre - Requiste
   Pyside
-  MongoDb
+  Mongod - instance up and running in local system
+  MongoEngine
   Pandas
   Matplotlib
-  
- 
