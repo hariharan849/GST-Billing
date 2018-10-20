@@ -31,7 +31,7 @@ class SplashScreen(_QtGui.QSplashScreen):
         Constructor
         """
         # launchIcon = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'logos', 'launchIcon.png')
-        launchIcon = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'logos', 'lokriLauch.png')
+        launchIcon = _os.path.join(_os.path.dirname(__file__), 'logos', 'lokriLauch.png')
         print launchIcon
         ericPic = _QtGui.QPixmap(launchIcon)
         self.labelAlignment = _QtCore.Qt.Alignment(
@@ -320,12 +320,12 @@ def main():
 
         widget = Launcher()
         widget.show()
-        styleFile = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'styleSheet', 'QTDark.stylesheet')
+        styleFile = _os.path.join(_os.path.dirname(__file__), 'styleSheet', 'QTDark.stylesheet')
         print styleFile, _os.path.dirname(__file__)
         with open(styleFile, "r") as fh:
             app.setStyleSheet(fh.read())
     except Exception as ex:
-        errorFile = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'error.txt')
+        errorFile = _os.path.join(_os.path.dirname(__file__), 'error.txt')
         with open(styleFile, "w") as fh:
             fh.write(ex.message)
     _sys.exit(app.exec_())

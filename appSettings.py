@@ -1,7 +1,7 @@
 from os.path import join, dirname
 from json import load
 
-file_path = join(dirname(dirname(__file__)), 'appSettings.json')
+file_path = join(dirname(__file__), 'appSettings.json')
 with open(file_path) as file_obj:
     lokri_dict = load(file_obj)
     CUSTOMER_NAME = lokri_dict['company_name']
