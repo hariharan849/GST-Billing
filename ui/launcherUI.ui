@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>916</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>916</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuVoucher">
+    <property name="title">
+     <string>Voucher</string>
+    </property>
+    <addaction name="actionDebit_Voucher"/>
+    <addaction name="separator"/>
+    <addaction name="actionCredit_Voucher"/>
+   </widget>
+   <widget class="QMenu" name="menuAdd_Items">
+    <property name="title">
+     <string>Add Items</string>
+    </property>
+    <addaction name="actionSales_Item"/>
+    <addaction name="separator"/>
+    <addaction name="actionPurchase_Item"/>
+   </widget>
+   <widget class="QMenu" name="menuAdd_Customer">
+    <property name="title">
+     <string>Add Customer</string>
+    </property>
+    <addaction name="actionCustomer_Details"/>
+   </widget>
+   <widget class="QMenu" name="menuChart">
+    <property name="title">
+     <string>Chart</string>
+    </property>
+    <addaction name="actionSales_Chart"/>
+    <addaction name="actionPurchase_Chart"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaled_Item"/>
+    <addaction name="actionPurchased_Item"/>
+   </widget>
+   <widget class="QMenu" name="menuQuotation">
+    <property name="title">
+     <string>Quotation</string>
+    </property>
+    <addaction name="actionCreate_Quotation"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuotation_Report"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionAbout_Us"/>
+   </widget>
+   <widget class="QMenu" name="menuPurchase_Order">
+    <property name="title">
+     <string>Purchase Order</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionCreate_Purchase_Order"/>
+    <addaction name="separator"/>
+    <addaction name="actionPurchase_Order_Report"/>
+   </widget>
+   <widget class="QMenu" name="menuPurchase">
+    <property name="title">
+     <string>Purchase</string>
+    </property>
+    <addaction name="actionPurchase_Invoice"/>
+    <addaction name="separator"/>
+    <addaction name="actionPurchase_Report"/>
+   </widget>
+   <widget class="QMenu" name="menuSales">
+    <property name="title">
+     <string>Sales</string>
+    </property>
+    <addaction name="actionSales_Invoice"/>
+    <addaction name="actionSales_Report"/>
+    <addaction name="separator"/>
+    <addaction name="actionPerforma_Invoice"/>
+    <addaction name="actionPerforma_Report"/>
+   </widget>
+   <addaction name="menuSales"/>
+   <addaction name="menuPurchase"/>
+   <addaction name="menuQuotation"/>
+   <addaction name="menuPurchase_Order"/>
+   <addaction name="menuAdd_Customer"/>
+   <addaction name="menuAdd_Items"/>
+   <addaction name="menuVoucher"/>
+   <addaction name="menuChart"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionDebit_Voucher">
+   <property name="text">
+    <string>Debit Voucher</string>
+   </property>
+  </action>
+  <action name="actionCredit_Voucher">
+   <property name="text">
+    <string>Credit Voucher</string>
+   </property>
+  </action>
+  <action name="actionSales_Item">
+   <property name="text">
+    <string>Sales Item</string>
+   </property>
+  </action>
+  <action name="actionPurchase_Item">
+   <property name="text">
+    <string>Purchase Item</string>
+   </property>
+  </action>
+  <action name="actionCustomer_Details">
+   <property name="text">
+    <string>Customer Details</string>
+   </property>
+  </action>
+  <action name="actionSales_Chart">
+   <property name="text">
+    <string>Sales Chart</string>
+   </property>
+  </action>
+  <action name="actionPurchase_Chart">
+   <property name="text">
+    <string>Purchase Chart</string>
+   </property>
+  </action>
+  <action name="actionCreate_Quotation">
+   <property name="text">
+    <string>Create Quotation</string>
+   </property>
+  </action>
+  <action name="actionQuotation_Report">
+   <property name="text">
+    <string>Quotation Report</string>
+   </property>
+  </action>
+  <action name="actionAbout_Us">
+   <property name="text">
+    <string>About Us</string>
+   </property>
+  </action>
+  <action name="actionCreate_Purchase_Order">
+   <property name="text">
+    <string>Create Purchase Order</string>
+   </property>
+  </action>
+  <action name="actionPurchase_Order_Report">
+   <property name="text">
+    <string>Purchase Order Report</string>
+   </property>
+  </action>
+  <action name="actionPurchase_Invoice">
+   <property name="text">
+    <string>Purchase Invoice</string>
+   </property>
+  </action>
+  <action name="actionPurchase_Report">
+   <property name="text">
+    <string>Purchase Report</string>
+   </property>
+  </action>
+  <action name="actionSales_Invoice">
+   <property name="text">
+    <string>Sales Invoice</string>
+   </property>
+  </action>
+  <action name="actionSales_Report">
+   <property name="text">
+    <string>Sales Report</string>
+   </property>
+  </action>
+  <action name="actionSaled_Item">
+   <property name="text">
+    <string>Saled Item</string>
+   </property>
+  </action>
+  <action name="actionPurchased_Item">
+   <property name="text">
+    <string>Purchased Item</string>
+   </property>
+  </action>
+  <action name="actionPerforma_Invoice">
+   <property name="text">
+    <string>Performa Invoice</string>
+   </property>
+  </action>
+  <action name="actionPerforma_Report">
+   <property name="text">
+    <string>Performa Report</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

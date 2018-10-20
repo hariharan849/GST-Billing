@@ -1,0 +1,1 @@
+# from _views.genericTableView import VoucherTable
