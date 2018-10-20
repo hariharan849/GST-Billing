@@ -5,8 +5,8 @@ To Start:
   Run launcherApplication.py
   
 Pre - Requiste
-  Pyside
-  Mongod - instance up and running in local system
-  MongoEngine
-  Pandas
-  Matplotlib
+  Pyside,
+  Mongod - instance up and running in local system,
+  MongoEngine,
+  Pandas,
+  Matplotlib.
