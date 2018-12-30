@@ -1,7 +1,7 @@
 from os.path import dirname, join
 from json import load
 
-filePath = join(dirname(dirname(dirname(__file__))), 'template.json')
+filePath = join(dirname(dirname(__file__)), 'template.json')
 print filePath
 with open(filePath) as fileObj:
     lokriDict = load(fileObj)
@@ -303,9 +303,9 @@ def _setCompanyLogo(canvas):
     ''' Sets company logo to PDF
     '''
     canvas.drawImage(
-        join(dirname(dirname(dirname(__file__))), 'logos', 'logo.png'), 40, 715, 50, 30)
+        join(dirname(dirname(__file__)), 'logos', 'logo.png'), 40, 715, 50, 30)
     canvas.drawImage(
-        join(dirname(dirname(dirname(__file__))), 'logos', 'iso.png'), 505, 715, 50, 30)
+        join(dirname(dirname(__file__)), 'logos', 'iso.png'), 505, 715, 50, 30)
 
 def _createOuterTemplate(canvas, pageNo, billNo):
     ''' Creates outermost template
@@ -373,4 +373,5 @@ if __name__ == '__main__':
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen.canvas import Canvas
     canvas = Canvas(str('E:\darshan_auto_cable\pdf_templates\sample.pdf'), pagesize=letter)
-    createOuterTemplate(canvas, '1', '3')
+    createBillOuterTemplate(canvas, '1', '3')
+    canvas.save()

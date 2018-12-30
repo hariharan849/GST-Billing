@@ -1,6 +1,6 @@
 /* Customize any plain widget that is a child of a QMainWindow. */
-QMainWindow > .QWidget {
     background-color: gainsboro;
+QMainWindow > .QWidget {
     background-image: url(:/images/pagefold.png);
     background-position: top right;
     background-repeat: no-repeat

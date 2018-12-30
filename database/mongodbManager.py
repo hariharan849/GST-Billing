@@ -1,5 +1,5 @@
-import database as _database
-# from mongoengine.queryset.visitor import Q
+import mongodatabase as _database
+from mongoengine.queryset.visitor import Q
 
 class QuotationManager(object):
     '''
@@ -10,13 +10,13 @@ class QuotationManager(object):
 
     @staticmethod
     def getQuotationItemInfo(quotationNo):
-        # quotationInfo = QuotationManager.getQuotationDetailsInfo(quotationNo)
-        return _database.QuotationItems.select().join(_database.QuotationDetails).where(
-            _database.QuotationItems.quotationNo == quotationNo)
+        quotationInfo = QuotationManager.getQuotationDetailsInfo(quotationNo)
+        return _database.QuotationItems.objects(
+            Q(quotationNo=quotationInfo))
 
     @staticmethod
     def saveQuotationItemInfo(quotationNo, itemCode, particular, hsnCode, quantity, rate, cgst, sgst, igst):
-        quotationItem = _database.QuotationItems.create(
+        quotationItem = _database.QuotationItems(
             quotationNo=QuotationManager.getQuotationDetailsInfo(quotationNo),
             itemCode=itemCode,
             particular=particular,
@@ -31,14 +31,14 @@ class QuotationManager(object):
 
     @staticmethod
     def getOrderedQuotationNoInfo():
-        return _database.QuotationDetails.select().order_by(_database.QuotationDetails.quotationNo.desc()).get()
+        return _database.QuotationDetails.objects.order_by('-quotationNo')[0].quotationNo
 
     @staticmethod
     def saveQuotationInfo(customerName, customerAddress , quotationNo, quotationValidity, quotationDate, estAmount, estTotal, remarks):
         '''
         Saves the Quotation information to the database
         '''
-        quotation = _database.QuotationDetails.create(
+        quotation = _database.QuotationDetails(
             customerName=customerName,
             customerAddress=customerAddress ,
             quotationNo=quotationNo,
@@ -46,8 +46,7 @@ class QuotationManager(object):
             quotationDate=quotationDate,
             estAmount=estAmount,
             estTotal=estTotal,
-            remarks=remarks,
-            cancelReason=''
+            remarks=remarks
         )
         quotation.save()
 
@@ -56,15 +55,15 @@ class QuotationManager(object):
         '''
         Returns all Quotation information from the database
         '''
-        return _database.QuotationDetails.select()
+        return _database.QuotationDetails.objects
 
     @staticmethod
     def getQuotationDetailsInfo(quotationNo):
         '''
         Returns the PO information from the database for the passed poNo
         '''
-        return _database.QuotationDetails.select().where(
-            _database.QuotationDetails.quotationNo == quotationNo)[0]
+        return _database.QuotationDetails.objects(
+            Q(quotationNo = quotationNo))[0]
 
     @staticmethod
     def deleteQuotationDetailsInfo(quotationNo=None):
@@ -73,10 +72,10 @@ class QuotationManager(object):
         '''
         if quotationNo:
             quotationInfo = QuotationManager.getQuotationDetailsInfo(quotationNo)
-            quotationInfo.delete_instance()
+            quotationInfo.delete()
             return
         for quotationInfo in QuotationManager.fetchAllQuotationInfo():
-            quotationInfo.delete_instance()
+            quotationInfo.delete()
 
 class SalesManager(object):
     '''
@@ -87,26 +86,26 @@ class SalesManager(object):
         self._type = type
 
     def getOrderedSalesNoInfo(self):
-        return _database.SalesInvoice.select().where(_database.SalesInvoice.type==self._type).order_by(_database.SalesInvoice.billNo.desc())[0].get()
+        return _database.SalesInvoice.objects(type=self._type).order_by('-billNo')[0].billNo
 
     def getItemInfo(self, billNo, type=None):
+        salesInfo = self.getSalesInfo(billNo, type)
         type = type or self._type
-        return _database.SalesProducts.select().where(
-            (_database.SalesProducts.billNo == billNo) &
-            (_database.SalesProducts.type == type))
+        return _database.SalesProducts.objects(
+            Q(billNo=salesInfo) &
+            Q(type=type))
 
     def fetchAllItemInfo(self):
-        return _database.SalesProducts.select().where(
-            (_database.SalesProducts.type == type))
+        return _database.SalesProducts.objects(Q(type=type))
 
     def getItemInfoByCode(self, itemCode):
-        return _database.SalesProducts.select().where(
-            (_database.PurchasedProducts.itemCode == itemCode) &
-            (_database.SalesProducts.type == type))
+
+        return _database.SalesProducts.objects(Q(type=type) &
+                                               Q(itemCode=itemCode))
 
     def saveSalesItemInfo(self, billNo, itemCode, particular, hsnCode, quantity, rate, cgst, sgst, igst):
-        quotationItem = _database.SalesProducts.create(
-            billNo=billNo,
+        quotationItem = _database.SalesProducts(
+            billNo=self.getSalesInfo(billNo),
             itemCode=itemCode,
             particular=particular,
             hsnCode=hsnCode,
@@ -121,11 +120,11 @@ class SalesManager(object):
 
     def saveSalesInfo(self, customerName, customerAddress, customerGstin, customerStateCode, paidBy, billNo,
                       billDate, poNo, poDate, vendorCode, paymentTerms, dcCode, dcDate, vehicleNo,
-                      dispatchedThrough, amount, total, amountPaid, remarks, cancelReason):
+                      dispatchedThrough, amount, total, amountPaid, remarks):
         '''
         Saves the Purchase information to the database
         '''
-        sales = _database.SalesInvoice.create(
+        sales = _database.SalesInvoice(
             customerName=customerName,
             customerAddress=customerAddress,
             customerGstin=customerGstin,
@@ -145,8 +144,7 @@ class SalesManager(object):
             total=total,
             amountPaid=amountPaid,
             remarks=remarks,
-            type=self._type,
-            cancelReason=cancelReason
+            type=self._type
         )
         sales.save()
 
@@ -154,28 +152,16 @@ class SalesManager(object):
         '''
         Returns all Sales information from the database
         '''
-        return _database.SalesInvoice.select().where(_database.SalesInvoice.type == self._type)
-
-    def fetchInfoWithinDate(self, fromDate, toDate):
-        '''
-        Returns all Sales information within date from the database
-        '''
-        return _database.SalesInvoice.select().where(
-            (_database.SalesInvoice.billDate >= fromDate) and
-            (_database.SalesInvoice.billDate <= toDate) and
-            (_database.SalesInvoice.type == self._type))
+        return _database.SalesInvoice.objects(type=self._type)
 
     def getSalesInfo(self, billNo, type=None):
         '''
         Returns the Sales information from the database for the passed poNo
         '''
         type = type or self._type
-        try:
-            return _database.SalesInvoice.select().where(
-                (_database.SalesInvoice.billNo == billNo) &
-                (_database.SalesInvoice.type==type))[0]
-        except:
-            return []
+        return _database.SalesInvoice.objects(
+            Q(billNo = billNo) &
+            Q(type=type))[0]
 
     def deleteSalesInfo(self, billNo=None):
         '''
@@ -183,10 +169,10 @@ class SalesManager(object):
         '''
         if billNo:
             salesInfo = self.getSalesInfo(billNo)
-            salesInfo.delete_instance()
+            salesInfo.delete()
             return
         for salesInfo in self.fetchAllSalesInfo():
-            salesInfo.delete_instance()
+            salesInfo.delete()
 
 class PurchaseManager(object):
     '''
@@ -197,27 +183,27 @@ class PurchaseManager(object):
 
     @staticmethod
     def getOrderedPurchaseNoInfo():
-        # QuotationDetails.select().order_by(QuotationDetails.quotationNo.desc()).get()
-        return _database.PurchaseInvoice.select().order_by(_database.PurchaseInvoice.billNo.desc()).get()
+        return _database.PurchaseInvoice.objects.order_by('-billNo')[0].billNo
 
     @staticmethod
     def getItemInfo(purchaseNo):
-        return _database.PurchasedProducts.select().where(
-            (_database.PurchasedProducts.billNo == purchaseNo))
+        purchaseInfo = PurchaseManager.getPurchaseDetailsInfo(purchaseNo)
+        return _database.PurchasedProducts.objects(
+            Q(billNo=purchaseInfo))
 
     @staticmethod
     def fetchAllItemInfo():
-        return _database.PurchasedProducts.select()
+        return _database.PurchasedProducts.objects
 
     @staticmethod
     def getItemInfoByCode(itemCode):
-        return _database.PurchasedProducts.select().where(
-            (_database.PurchasedProducts.itemCode == itemCode))
+        return _database.PurchasedProducts.objects(
+            Q(itemCode=itemCode))
 
     @staticmethod
     def savePurchaseItemInfo(quotationNo, itemCode, particular, hsnCode, quantity, rate, cgst, sgst, igst):
-        purchaseItem = _database.PurchasedProducts.create(
-            billNo=quotationNo,
+        purchaseItem = _database.PurchasedProducts(
+            billNo=PurchaseManager.getPurchaseDetailsInfo(quotationNo),
             itemCode=itemCode,
             particular=particular,
             hsnCode=hsnCode,
@@ -235,7 +221,7 @@ class PurchaseManager(object):
         '''
         Saves the Purchase information to the database
         '''
-        purchase = _database.PurchaseInvoice.create(
+        purchase = _database.PurchaseInvoice(
             vendorName=vendorName,
             vendorAddress=vendorAddress,
             vendorGstin=vendorGstin,
@@ -247,8 +233,7 @@ class PurchaseManager(object):
             total=float(total),
             tax=float(tax),
             amountPaid=float(amountPaid),
-            remarks=remarks,
-            cancelReason=''
+            remarks=remarks
         )
         purchase.save()
 
@@ -257,25 +242,15 @@ class PurchaseManager(object):
         '''
         Returns all Purchase information from the database
         '''
-        return _database.PurchaseInvoice.select()
-
-    @staticmethod
-    def fetchInfoWithinDate(self, fromDate, toDate):
-        '''
-        Returns all Sales information within date from the database
-        '''
-        return _database.PurchaseInvoice.select().where(
-            (_database.PurchaseInvoice.billDate >= fromDate) and
-            (_database.PurchaseInvoice.billDate <= toDate))
-
+        return _database.PurchaseInvoice.objects
 
     @staticmethod
     def getPurchaseDetailsInfo(purchaseNo):
         '''
         Returns the Purchase information from the database for the passed poNo
         '''
-        return _database.PurchaseInvoice.select().where(
-            (_database.PurchaseInvoice.billNo == purchaseNo))[0]
+        return _database.PurchaseInvoice.objects(
+            Q(billNo = purchaseNo))[0]
 
     @staticmethod
     def deletePurchaseDetailsInfo(purchaseNo=None):
@@ -284,10 +259,10 @@ class PurchaseManager(object):
         '''
         if purchaseNo:
             purchaseInfo = PurchaseManager.getPurchaseDetailsInfo(purchaseNo)
-            purchaseInfo.delete_instance()
+            purchaseInfo.delete()
             return
         for purchaseInfo in PurchaseManager.fetchAllPurchaseInfo():
-            purchaseInfo.delete_instance()
+            purchaseInfo.delete()
 
 class PurchaseOrderManager(object):
     '''
@@ -298,8 +273,8 @@ class PurchaseOrderManager(object):
 
     @staticmethod
     def savePurchaseOrderProduct(poNo, itemCode, particulars, hsnCode, quantity):
-        poItem = _database.PurchaseOrderProducts.create(
-            poNo=poNo,
+        poItem = _database.PurchaseOrderProducts(
+            PurchaseOrderManager.getPOInfo(poNo),
             itemCode=itemCode,
             particular=particulars,
             hsnCode=hsnCode,
@@ -312,12 +287,11 @@ class PurchaseOrderManager(object):
         '''
         Saves the PurchaseOrder information to the database
         '''
-        po = _database.PurchaseOrder.create(
+        po = _database.PurchaseOrder(
             customerName=custName,
-            poNo=int(poNo),
+            poNo=poNo,
             poDate=poDate,
-            remarks=remarks,
-            cancelReason=''
+            remarks=remarks
         )
         po.save()
 
@@ -326,18 +300,18 @@ class PurchaseOrderManager(object):
         '''
         Returns all PO information from the database
         '''
-        return _database.PurchaseOrder.select()
+        return _database.PurchaseOrder.objects
 
     def fetchAllpoNo(self):
-        return [poInfo.poNo for poInfo in _database.PurchaseOrder.select()]
+        return [poInfo.poNo for poInfo in _database.PurchaseOrder.objects]
 
     @staticmethod
     def getPOInfo(poNo):
         '''
         Returns the PO information from the database for the passed poNo
         '''
-        return _database.PurchaseOrder.select().where(
-            (_database.PurchaseOrder.poNo == poNo))[0]
+        return _database.PurchaseOrder.objects(
+            Q(poNo = poNo))[0]
 
     @staticmethod
     def deletePOInfo(poNo=None):
@@ -346,14 +320,15 @@ class PurchaseOrderManager(object):
         '''
         if poNo:
             poInfo = PurchaseOrderManager.getPOInfo(poNo)
-            poInfo.delete_instance()
+            poInfo.delete()
             return
         for poInfo in PurchaseOrderManager.fetchAllPOInfo():
-            poInfo.delete_instance()
+            poInfo.delete()
 
     def getPurchaseOrderItemInfo(self, poNo):
-        return _database.PurchaseOrderProducts.select().where(
-            (_database.PurchaseOrder.poNo==poNo))
+        poInfo = PurchaseOrderManager.getPOInfo(poNo)
+        return _database.PurchaseOrderProducts.objects(
+            Q(poNo=poInfo))
 
 class CompanyItemManager(object):
     '''
@@ -364,13 +339,13 @@ class CompanyItemManager(object):
         self._type = type
 
     def fetchAllItemCodes(self):
-        return [companyItem.itemCode for companyItem in _database.CompanyItems.select().where(_database.CompanyItems.type==self._type)]
+        return [companyItem.itemCode for companyItem in _database.CompanyItems.objects(type=self._type)]
 
     def saveCompanyItemInfo(self, itemCode, itemName, hsnCode, quantity, itemPrice):
         '''
         Saves the voucher information to the database
         '''
-        customer = _database.CompanyItems.create(
+        customer = _database.CompanyItems(
             itemCode=itemCode,
             itemName=itemName,
             hsnCode=hsnCode,
@@ -384,15 +359,15 @@ class CompanyItemManager(object):
         '''
         Returns all company information from the database
         '''
-        return _database.CompanyItems.select().where(_database.CompanyItems.type==self._type)
+        return _database.CompanyItems.objects(type=self._type)
 
     def getCompanyItemInfo(self, itemCode):
         '''
         Returns the company information from the database for the passed itemCode
         '''
-        return _database.CompanyItems.select().where(
-            (_database.CompanyItems.itemCode == itemCode) &
-            (_database.CompanyItems.type == self._type))[0]
+        return _database.CompanyItems.objects(
+            Q(itemCode = itemCode) &
+            Q(type=self._type))[0]
 
     def deleteCompanyItemInfo(self, itemCode=None):
         '''
@@ -400,10 +375,10 @@ class CompanyItemManager(object):
         '''
         if itemCode:
             companyItemInfo = self.getCompanyItemInfo(itemCode)
-            companyItemInfo.delete_instance()
+            companyItemInfo.delete()
             return
         for companyItemInfo in self.fetchAllCompanyItemInfo():
-            companyItemInfo.delete_instance()
+            companyItemInfo.delete()
 
 class CustomerManager(object):
     '''
@@ -417,7 +392,7 @@ class CustomerManager(object):
         '''
         Saves the voucher information to the database
         '''
-        customer = _database.CustomerNames.create(
+        customer = _database.CustomerNames(
             custCode=custCode,
             custName=custName,
             custAddress=custAddress,
@@ -428,22 +403,22 @@ class CustomerManager(object):
         customer.save()
 
     def fetchAllItemCodes(self):
-        return [customerInfo.custCode for customerInfo in _database.CustomerNames.select()]
+        return [customerInfo.custCode for customerInfo in _database.CustomerNames.objects]
 
     @staticmethod
     def fetchAllCustomerInfo():
         '''
         Returns all customer information from the database
         '''
-        return _database.CustomerNames.select()
+        return _database.CustomerNames.objects
 
     @staticmethod
     def getCustomerInfo(custCode):
         '''
         Returns the customer information from the database for the passed gstinNo
         '''
-        return _database.CustomerNames.select().where(
-            _database.CustomerNames.custCode == custCode)[0]
+        return _database.CustomerNames.objects(
+            Q(custCode = custCode))[0]
 
     @staticmethod
     def deleteCustomerInfo(custCode=None):
@@ -452,10 +427,10 @@ class CustomerManager(object):
         '''
         if custCode:
             customerInfo = CustomerManager.getCustomerInfo(custCode)
-            customerInfo.delete_instance()
+            customerInfo.delete()
             return
         for customerInfo in CustomerManager.fetchAllCustomerInfo():
-            customerInfo.delete_instance()
+            customerInfo.delete()
 
 class VoucherManager(object):
     '''
@@ -465,11 +440,11 @@ class VoucherManager(object):
         super(VoucherManager, self).__init__()
         self._type = type
 
-    def saveVoucherInfo(self, voucherNo, customerName, voucherDate, remarks, paymentType, chequeNo, amount, cancelReason):
+    def saveVoucherInfo(self, voucherNo, customerName, voucherDate, remarks, paymentType, chequeNo, amount):
         '''
         Saves the voucher information to the database
         '''
-        voucher = _database.Voucher.create(
+        voucher = _database.Voucher(
             voucherNo=str(voucherNo),
             customerName=customerName,
             voucherDate=voucherDate,
@@ -477,8 +452,7 @@ class VoucherManager(object):
             paymentType=str(paymentType),
             chequeNo=str(chequeNo if chequeNo.lower() != 'nan' else ''),
             amount=str(amount),
-            type=self._type,
-            cancelReason=str(cancelReason)
+            type=self._type
         )
         voucher.save()
 
@@ -486,20 +460,22 @@ class VoucherManager(object):
         '''
         Returns all voucher information to the database
         '''
-        return _database.Voucher.select().where(_database.Voucher.type==self._type)
+        return _database.Voucher.objects(type=self._type)
 
     def fetchAllVoucherNo(self):
         '''
         Returns all voucher information to the database
         '''
-        return [voucherInfo.voucherNo for voucherInfo in _database.Voucher.select().where(_database.Voucher.type==self._type)]
+        return [voucherInfo.voucherNo for voucherInfo in _database.Voucher.objects(type=self._type)]
 
 
     def getVoucherInfo(self, voucherNo):
         '''
         Returns the voucher information from the database for the passed voucherNo
         '''
-        return _database.Voucher.select().where((_database.Voucher.type==self._type) and (_database.Voucher.voucherNo == voucherNo))[0]
+        return _database.Voucher.objects(
+            Q(voucherNo = voucherNo) &
+            Q(type = self._type))[0]
 
     def deleteVoucherInfo(self, voucherNo=None):
         '''
@@ -507,7 +483,7 @@ class VoucherManager(object):
         '''
         if voucherNo:
             voucherInfo = self.getVoucherInfo(voucherNo)
-            voucherInfo.delete_instance()
+            voucherInfo.delete()
             return
         for voucherInfo in self.fetchAllVoucherInfo():
-            voucherInfo.delete_instance()
+            voucherInfo.delete()

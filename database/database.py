@@ -1,132 +1,255 @@
+from peewee import SqliteDatabase, Model, TextField, DateField, FloatField, ForeignKeyField, IntegerField
 
-from mongoengine import *
-connect('gstDetails')
-
-class Voucher(DynamicDocument):
-    voucherNo = StringField(max_length=200, required=True)
-    customerName = StringField(max_length=200, required=True)
-    voucherDate = DateTimeField(required=True)
-    remarks = StringField(max_length=200, required=True)
-    paymentType = StringField(max_length=100, required=True)
-    chequeNo = StringField(max_length=50, required=True)
-    amount = StringField(max_length=50, required=True)
-    type = StringField(max_length=50, required=True)
+db = SqliteDatabase('lokri.db')
 
 
-class CompanyItems(DynamicDocument):
-    itemCode = StringField(max_length=200, required=True)
-    itemName = StringField(max_length=200, required=True)
-    hsnCode = StringField(max_length=200, required=True)
-    quantity = StringField(max_length=200, required=True)
-    itemPrice = FloatField(required=True)
-    type = StringField(max_length=100, required=True)
+class Voucher(Model):
+    voucherNo = TextField()
+    customerName = TextField()
+    voucherDate = DateField()
+    remarks = TextField()
+    paymentType = TextField()
+    chequeNo = TextField()
+    amount = TextField()
+    type = TextField()
+    cancelReason = TextField()
+    class Meta:
+        database = db
 
+class CompanyItems(Model):
+    itemCode = TextField()
+    itemName = TextField()
+    hsnCode = TextField()
+    quantity = TextField()
+    itemPrice = FloatField()
+    type = TextField()
+    class Meta:
+        database = db
 
-class CustomerNames(DynamicDocument):
-    custCode = StringField(max_length=100, required=True)
-    custName = StringField(max_length=200, required=True)
-    custAddress = StringField(max_length=200, required=True)
-    gstin = StringField(max_length=200, required=True)
-    stateCode = IntField(required=True)
-    contactNo = StringField(max_length=20, required=True)
+class CustomerNames(Model):
+    custCode = TextField()
+    custName = TextField()
+    custAddress = TextField()
+    gstin = TextField()
+    stateCode = IntegerField()
+    contactNo = IntegerField()
+    class Meta:
+        database = db
 
-
-class PurchaseOrder(DynamicDocument):
-    customerName = StringField(max_length=200, required=True)
-    poNo = IntField(required=True)
-    poDate = DateTimeField(required=True)
-    remarks = StringField(max_length=200, required=True)
-    cancelReason = StringField(max_length=200, required=False)
-
-class PurchaseOrderProducts(DynamicDocument):
-    poNo = ReferenceField('PurchaseOrder', reverse_delete_rule=CASCADE)
-    itemCode = StringField(max_length=200, required=True)
-    particular = StringField(max_length=200, required=True)
-    hsnCode = StringField(max_length=200, required=True)
-    quantity = StringField(max_length=100, required=True)
-
-
-class QuotationDetails(DynamicDocument):
-    customerName = StringField(max_length=200, required=True)
-    customerAddress = StringField(max_length=200, required=True)
-    quotationNo = IntField(required=True)
-    quotationValidity = DateTimeField(required=True)
-    quotationDate = DateTimeField(required=True)
-    estAmount = FloatField(required=True)
-    estTotal = FloatField(required=True)
-    remarks = StringField(max_length=200, required=True)
-    cancelReason = StringField(max_length=200, required=False)
-
-class QuotationItems(DynamicDocument):
-    quotationNo = ReferenceField('QuotationDetails', reverse_delete_rule=CASCADE)
-    itemCode = StringField(max_length=100, required=True)
-    particular = StringField(max_length=200, required=True)
-    hsnCode = StringField(max_length=200, required=True)
-    quantity = StringField(max_length=200, required=True)
-    rate = FloatField(required=True)
-    cgst = FloatField(required=True)
-    sgst = FloatField(required=True)
-    igst = FloatField(required=True)
-
-
-class PurchaseInvoice(DynamicDocument):
-    vendorName = StringField(max_length=200, required=True)
-    vendorAddress = StringField(max_length=200, required=True)
-    vendorGstin = StringField(max_length=200, required=True)
-    vendorStateCode = StringField(max_length=200, required=True)
-    billNo = StringField(max_length=200, required=True)
-    billDate = DateTimeField(required=True)
-    dueDate = DateTimeField(required=True)
-    payBy = StringField(max_length=200, required=True)
+class InvoiceDatabase(Model):
+    customerName = TextField()
+    customerAddress = TextField()
+    customerGstin = TextField()
+    stateCode = IntegerField()
+    paidBy = TextField()
+    billNo = TextField()
+    billDate = DateField()
+    poNo = TextField()
+    poDate = TextField()
+    vendorCode = TextField()
+    paymentTerms = TextField()
+    dcCode = TextField()
+    dcDate = TextField()
+    vehicleNo = TextField()
+    dispatchedThrough = TextField()
+    amount = FloatField()
     total = FloatField()
-    tax = FloatField(required=True)
-    amountPaid = FloatField(required=True)
-    remarks = StringField(max_length=200, required=True)
-    cancelReason = StringField(max_length=200, required=False)
+    amountPaid = FloatField()
+    remarks = TextField()
+    class Meta:
+        database = db
 
-class PurchasedProducts(DynamicDocument):
-    billNo = ReferenceField('PurchaseInvoice', reverse_delete_rule=CASCADE)
-    itemCode = StringField(max_length=100, required=True)
-    particular = StringField(max_length=200, required=True)
-    hsnCode = StringField(max_length=200, required=True)
-    quantity = StringField(max_length=200, required=True)
-    rate = FloatField(required=True)
-    cgst = FloatField(required=True)
-    sgst = FloatField(required=True)
-    igst = FloatField(required=True)
+class ParticularMapping(Model):
+    billNo = ForeignKeyField(InvoiceDatabase, to_field="billNo")
+    particular = TextField()
+    hsnCode = TextField()
+    quantity = TextField()
+    rate = FloatField()
+    cgst = FloatField()
+    sgst = FloatField()
+    igst = FloatField()
+    class Meta:
+        database = db
+
+class QuotationDetails(Model):
+    customerName = TextField()
+    customerAddress = TextField()
+    quotationNo = IntegerField()
+    quotationValidity = DateField()
+    quotationDate = DateField()
+    estAmount = FloatField()
+    estTotal = FloatField()
+    remarks = TextField()
+    cancelReason = TextField()
+    class Meta:
+        database = db
+
+class QuotationItems(Model):
+    quotationNo = ForeignKeyField(QuotationDetails, to_field="quotationNo")
+    itemCode = TextField()
+    particular = TextField()
+    hsnCode = TextField()
+    quantity = TextField()
+    rate = FloatField()
+    cgst = FloatField()
+    sgst = FloatField()
+    igst = FloatField()
+    class Meta:
+        database = db
+
+class PurchaseOrder(Model):
+    customerName = TextField()
+    poNo = IntegerField()
+    poDate = DateField()
+    remarks = TextField()
+    cancelReason = TextField()
+    class Meta:
+        database = db
+
+class PurchaseOrderProducts(Model):
+    poNo = ForeignKeyField(PurchaseOrder, to_field="poNo")
+    itemCode = TextField()
+    particular = TextField()
+    hsnCode = TextField()
+    quantity = TextField()
+    class Meta:
+        database = db
+
+class SalesInvoice(Model):
+    customerName = TextField()
+    customerAddress = TextField()
+    customerGstin = TextField()
+    customerStateCode = IntegerField()
+    paidBy = TextField()
+    billNo = TextField()
+    billDate = DateField()
+    poNo = TextField()
+    poDate = TextField()
+    vendorCode = TextField()
+    paymentTerms = TextField()
+    dcCode = TextField()
+    dcDate = TextField()
+    vehicleNo = TextField()
+    dispatchedThrough = TextField()
+    amount = FloatField()
+    total = FloatField()
+    amountPaid = FloatField()
+    remarks = TextField()
+    type = TextField()
+    cancelReason = TextField()
+    class Meta:
+        database = db
+
+class SalesProducts(Model):
+    billNo = ForeignKeyField(InvoiceDatabase, to_field="billNo")
+    itemCode = TextField()
+    particular = TextField()
+    hsnCode = TextField()
+    quantity = TextField()
+    rate = FloatField()
+    cgst = FloatField()
+    sgst = FloatField()
+    igst = FloatField()
+    type = TextField()
+    class Meta:
+        database = db
+
+class PurchaseInvoice(Model):
+    vendorName = TextField()
+    vendorAddress = TextField()
+    vendorGstin = TextField()
+    vendorStateCode = TextField()
+    billNo = TextField()
+    billDate = DateField()
+    dueDate = DateField()
+    payBy = TextField()
+    total = FloatField()
+    tax = FloatField()
+    amountPaid = FloatField()
+    remarks = TextField()
+    cancelReason = TextField()
+    class Meta:
+        database = db
+
+class PurchasedProducts(Model):
+    billNo = ForeignKeyField(PurchaseInvoice, to_field="billNo")
+    itemCode = TextField()
+    particular = TextField()
+    hsnCode = TextField()
+    quantity = TextField()
+    rate = FloatField()
+    cgst = FloatField()
+    sgst = FloatField()
+    igst = FloatField()
+
+    class Meta:
+        database = db
 
 
-class SalesInvoice(DynamicDocument):
-    customerName = StringField(max_length=200, required=True)
-    customerAddress = StringField(max_length=200, required=True)
-    customerGstin = StringField(max_length=200, required=True)
-    customerStateCode = IntField(required=True)
-    paidBy = StringField(max_length=200, required=True)
-    billNo = StringField(max_length=200, required=True)
-    billDate = DateTimeField(required=True)
-    poNo = StringField(max_length=200, required=True)
-    poDate = StringField(max_length=200, required=True)
-    vendorCode = StringField(max_length=200, required=True)
-    paymentTerms = StringField(max_length=200, required=True)
-    dcCode = StringField(max_length=200, required=True)
-    dcDate = StringField(max_length=200, required=True)
-    vehicleNo = StringField(max_length=200, required=True)
-    dispatchedThrough = StringField(max_length=200, required=True)
-    amount = FloatField(required=True)
-    total = FloatField(required=True)
-    amountPaid = FloatField(required=True)
-    remarks = StringField(max_length=200, required=True)
-    type = StringField(max_length=50, required=True)
-    cancelReason = StringField(max_length=200, required=False)
+try:
+    db.create_tables([SalesInvoice])
+except:
+    pass
 
-class SalesProducts(DynamicDocument):
-    billNo = ReferenceField('SalesInvoice', reverse_delete_rule=CASCADE)
-    itemCode = StringField(max_length=50, required=True)
-    particular = StringField(max_length=200, required=True)
-    hsnCode = StringField(max_length=200, required=True)
-    quantity = StringField(max_length=200, required=True)
-    rate = FloatField(required=True)
-    cgst = FloatField(required=True)
-    sgst = FloatField(required=True)
-    igst = FloatField(required=True)
-    type = StringField(max_length=100, required=True)
+
+try:
+    db.create_tables([SalesProducts])
+except:
+    pass
+
+try:
+    db.create_tables([PurchasedProducts])
+except:
+    pass
+
+try:
+    db.create_tables([PurchaseInvoice])
+except:
+    pass
+
+try:
+    db.create_tables([PurchaseOrderProducts])
+except:
+    pass
+
+try:
+    db.create_tables([PurchaseOrder])
+except:
+    pass
+
+
+try:
+    db.create_tables([QuotationDetails])
+except:
+    pass
+
+
+try:
+    db.create_tables([QuotationItems])
+except:
+    pass
+
+try:
+    db.create_tables([Voucher])
+except:
+    pass
+
+try:
+    db.create_tables([ParticularMapping])
+except:
+    pass
+
+try:
+    db.create_tables([CompanyItems])
+except:
+    pass
+
+try:
+    db.create_tables([CustomerNames])
+except:
+    pass
+
+try:
+    db.create_tables([InvoiceDatabase])
+except:
+    pass
