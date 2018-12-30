@@ -16,3 +16,4 @@ from _widgets.sales.performaInvoice import PerformaInvoiceWidget
 from _widgets.sales.salesInvoice import SalesInvoiceWidget
 from _widgets.sales.salesReport import SalesReport
 from _widgets.common.itemInfoWidget import ItemInfoWidget
+from _widgets.pdfTemplateConfig.templateProperties import TemplateProperties

@@ -10,7 +10,7 @@ from ui import (
     homePage as _homePage
 )
 from widgets import (VoucherWidget, CompanyItemWidget, CustomerWidget, InvoiceChart, ParticularsChart, QuotationWidget,
-                     QuotationReportWidget, PurchaseOrderWidget, PurchaseReportWidget,
+                     QuotationReportWidget, PurchaseOrderWidget, PurchaseReportWidget, TemplateProperties,
                      PurchaseInvoiceWidget, PurchaseReport, SalesInvoiceWidget, SalesReport, PerformaInvoiceWidget)
 from database import SalesInvoice, PurchaseInvoice
 
@@ -32,7 +32,6 @@ class SplashScreen(_QtGui.QSplashScreen):
         """
         # launchIcon = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), 'logos', 'launchIcon.png')
         launchIcon = _os.path.join(_os.path.dirname(__file__), 'logos', 'lokriLauch.png')
-        print launchIcon
         ericPic = _QtGui.QPixmap(launchIcon)
         self.labelAlignment = _QtCore.Qt.Alignment(
             _QtCore.Qt.AlignBottom | _QtCore.Qt.AlignRight | _QtCore.Qt.AlignAbsolute)
@@ -115,11 +114,13 @@ class Launcher(_QtGui.QMainWindow):
             def __init__(self, *args, **kwargs):
                 super(HomeWidget, self).__init__(*args, **kwargs)
                 self.setupUi(self)
+                self.label.setPixmap(_QtGui.QPixmap("../../logos/lokri.png"))
 
         homePage = HomeWidget()
         self.setCentralWidget(homePage)
-        self.key_list = []
-        self.first_release = False
+        # self.__createVoucherWidget('sales')
+        # self.key_list = []
+        # self.first_release = False
         self.__setUpActionMenus()
         self.setWindowTitle('GST Application')
         self.showMaximized()
@@ -210,7 +211,7 @@ class Launcher(_QtGui.QMainWindow):
         widget = SalesInvoiceWidget('illegal', self)
         self.setCentralWidget(widget)
 
-    def __createIllaegalSalesReportWidget(self):
+    def __createIllegalSalesReportWidget(self):
         '''
         Create Purchase order
         '''
@@ -246,9 +247,21 @@ class Launcher(_QtGui.QMainWindow):
         '''
         Create invoice item chart
         '''
-        db = SalesInvoice if type == 'sales' else SalesInvoice
-        widget = ParticularsChart(db)
+        # db = SalesInvoice if type == 'sales' else SalesInvoice
+        widget = ParticularsChart(db, type)
         self.setCentralWidget(widget)
+
+    def __createTemplateWidget(self):
+        '''
+        Create widget for pdf configuration
+        '''
+        templateDialog = _QtGui.QDialog(self)
+        widget = TemplateProperties(templateDialog)
+        layout = _QtGui.QHBoxLayout(templateDialog)
+        layout.addWidget(widget)
+        templateDialog.setWindowTitle('PDF Configuration')
+        templateDialog.exec_()
+        # self.setCentralWidget(widget)
 
     def __setUpActionMenus(self):
         '''
@@ -283,29 +296,14 @@ class Launcher(_QtGui.QMainWindow):
         self.__launcherUI.actionPerforma_Invoice.triggered.connect(self.__createPerformaWidget)
         self.__launcherUI.actionPerforma_Report.triggered.connect(self.__createPerformaReportWidget)
 
-    def keyPressEvent(self, ev):
-        self.first_release = True
-        self.key_list.append(str(ev.key()))
+        illegalSalesShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("alt+s"), self)
+        illegalSalesShortcut.activated.connect(self.__createIllegalSalesWidget)
 
-    def keyReleaseEvent(self, ev):
-        if self.first_release:
-            self.process_multiple_keys()
-        self.first_release = False
-        if self.key_list:
-            del self.key_list[-1]
-            self.key_list = []
+        illegalSalesReportShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("alt+r"), self)
+        illegalSalesReportShortcut.activated.connect(self.__createIllegalSalesReportWidget)
 
-    def process_multiple_keys(self):
-        if not hasattr(self, 'key_list'):
-            return
-        if len(self.key_list) != 2:
-            return
-        if ' '.join(self.key_list) == '16777251 66':
-
-            self.__createIllegalSalesWidget()
-        elif ' '.join(self.key_list) == '16777251 82':
-            self.__createIllaegalSalesReportWidget()
-
+        templatePdfShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("alt+shift+s"), self)
+        templatePdfShortcut.activated.connect(self.__createTemplateWidget)
 
 def main():
     import time
@@ -321,13 +319,15 @@ def main():
         widget = Launcher()
         widget.show()
         styleFile = _os.path.join(_os.path.dirname(__file__), 'styleSheet', 'QTDark.stylesheet')
-        print styleFile, _os.path.dirname(__file__)
         with open(styleFile, "r") as fh:
             app.setStyleSheet(fh.read())
     except Exception as ex:
+        import traceback
+        print traceback.print_exc()
         errorFile = _os.path.join(_os.path.dirname(__file__), 'error.txt')
-        with open(styleFile, "w") as fh:
+        with open(errorFile, "w") as fh:
             fh.write(ex.message)
+            fh.write(traceback.print_exc())
     _sys.exit(app.exec_())
 
 
