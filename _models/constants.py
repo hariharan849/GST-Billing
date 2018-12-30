@@ -13,7 +13,8 @@ _voucherSettings = [
     ['remarks', 'Remarks', 0, 0],
     ['paymentType', 'Payment Mode', 0, 0],
     ['chequeNo', 'Cheque No', 0, 0],
-    ['amount', 'Amount', 0, 0]
+    ['amount', 'Amount', 0, 0],
+    ['cancelReason', 'Cancel Reason', 0, 0]
 ]
 
 

@@ -8,7 +8,7 @@ Quotation Model for holding quotation information
 from genericTableModel import GenericTableModel
 from PySide import QtCore as _QtCore
 import constants as _constants
-from database import CompanyItems
+from database import CompanyItems, CompanyItemManager
 
 
 class QuotationDetails(object):
@@ -36,7 +36,9 @@ class QuotationTableModel(GenericTableModel):
     def __init__(self, parent=None):
         super(QuotationTableModel, self).__init__([], _constants._quotationSettings, parent)
 
-        self.__salesInfo = {companyInfo.itemCode: companyInfo for companyInfo in CompanyItems.select().where(CompanyItems.type == 'sales')}
+        companymanager = CompanyItemManager('sales')
+        self.__salesInfo = {companyInfo.itemCode: companyInfo for companyInfo in
+                            companymanager.fetchAllCompanyItemInfo()}
 
         for i in range(15):
             self.addQuotationInfo()

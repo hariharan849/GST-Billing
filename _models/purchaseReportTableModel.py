@@ -13,7 +13,6 @@ from PySide import (
 )
 import constants as _constants
 import datetime as _datetime
-from database import PurchaseInvoice
 
 mutex = _QtCore.QMutex()
 
@@ -28,17 +27,20 @@ class PurchaseSaveWorker(_QtCore.QThread):
         for purchaseInfo in self.__purchaseOrderInfo:
             mutex.lock()
             purchaseData = self.__manager.getPurchaseDetailsInfo(purchaseInfo.billNo.value)
-            purchaseData.vendorName = purchaseInfo.customerName
-            purchaseData.vendorAddress = purchaseInfo.customerAddress
-            purchaseData.vendorGstin = purchaseInfo.customerGstin
-            purchaseData.vendorStateCode = purchaseInfo.vendorStateCode
-            purchaseData.billNo = purchaseInfo.billNo
-            purchaseData.billDate = _datetime.datetime.strptime(purchaseInfo.billDate.value, '%d - %b - %y')
-            purchaseData.dueDate = _datetime.datetime.strptime(purchaseInfo.dueDate.value, '%d - %b - %y')
-            purchaseData.total = purchaseInfo.amount
-            purchaseData.tax = purchaseInfo.total
-            purchaseData.amountPaid = purchaseInfo.amountPaid
-            purchaseData.remarks = purchaseInfo.remarks
+            purchaseData.vendorName = purchaseInfo.vendorName.value
+            purchaseData.vendorAddress = purchaseInfo.vendorAddress.value
+            purchaseData.vendorGstin = purchaseInfo.vendorGstin.value
+            purchaseData.vendorStateCode = purchaseInfo.vendorStateCode.value
+            purchaseData.billNo = purchaseInfo.billNo.value
+            purchaseData.billDate = _datetime.datetime.strptime(purchaseInfo.billDate.value, '%Y-%m-%d')
+            purchaseData.dueDate = _datetime.datetime.strptime(purchaseInfo.dueDate.value, '%Y-%m-%d')
+
+            # print purchaseInfo.total.value, purchaseInfo.total.value-purchaseInfo.amount.value, purchaseInfo.amountPaid.value
+            purchaseData.total = float(purchaseInfo.amount.value)
+            purchaseData.tax = float(purchaseInfo.tax.value)
+            purchaseData.amountPaid = float(purchaseInfo.amountPaid.value)
+            purchaseData.remarks = purchaseInfo.remarks.value
+            purchaseData.save()
             mutex.unlock()
 
 class PuchaseReportDetails(object):
@@ -77,6 +79,8 @@ class PurchaseReportTableModel(_genericTableModel.GenericTableModel):
         '''
         if index.column() == 4:
             return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
+        if self.index(index.row(), 15).data() and self.index(index.row(), 15).data().strip():
+            return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
         return super(PurchaseReportTableModel, self).flags(index)
 
     def addPurchaseReportInfo(self, vendorName, vendorAddress, vendorGstin, vendorStateCode, billNo, billDate, dueDate,
@@ -96,9 +100,59 @@ class PurchaseReportTableModel(_genericTableModel.GenericTableModel):
         if role == _QtCore.Qt.BackgroundRole:
             if self._getData(row, column).flag:
                 return _QtGui.QBrush(_QtCore.Qt.green)
-            if self._getData(row, 15).value is not None:
-                return _QtGui.QBrush(_QtCore.Qt.darkGray)
+            if self._getData(row, 14) == 'Paid':
+                return _QtGui.QBrush(_QtCore.Qt.green)
+            if self._getData(row, 15).value:
+                return _QtGui.QBrush(_QtCore.Qt.darkYellow)
         return super(PurchaseReportTableModel, self).data(index, role)
+
+    def setData(self, index, value, role=_QtCore.Qt.EditRole):
+        '''
+        Sets data for the specified cell upon edit
+        '''
+        if index.column() not in [8, 9, 10, 11, 12]:
+            return super(PurchaseReportTableModel, self).setData(index, value, role)
+        if role == _QtCore.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            if index.data() == value:
+                return False
+            setattr(self.tableData[row], self.settings[column][_constants._columnId],
+                    _constants.valueWrapper(value, True))
+            amount = float(getattr(self.tableData[row], self.settings[8][_constants._columnId]).value)
+            tax = float(getattr(self.tableData[row], self.settings[9][_constants._columnId]).value)
+            total = float(getattr(self.tableData[row], self.settings[10][_constants._columnId]).value)
+            amountPaid = float(getattr(self.tableData[row], self.settings[11][_constants._columnId]).value)
+            balance = float(getattr(self.tableData[row], self.settings[12][_constants._columnId]).value)
+            # print column, amount+tax
+            value = float(value)
+            if column in [8, 9]:
+                setattr(self.tableData[row], self.settings[10][_constants._columnId],
+                        _constants.valueWrapper(amount+tax, True))
+            elif column == 10:
+                setattr(self.tableData[row], self.settings[8][_constants._columnId],
+                        _constants.valueWrapper(total - tax, True))
+            elif column == 11:
+                if value > total:
+                    _QtGui.QMessageBox.critical(None, 'Error',
+                                                'Amount Paid is greater than Total',
+                                                buttons=_QtGui.QMessageBox.Ok)
+                    return True
+                setattr(self.tableData[row], self.settings[12][_constants._columnId],
+                        _constants.valueWrapper(total-value, True))
+            elif column == 12:
+                if value > total:
+                    _QtGui.QMessageBox.critical(None, 'Error',
+                                                'Balance is greater than Total',
+                                                buttons=_QtGui.QMessageBox.Ok)
+                    return True
+                setattr(self.tableData[row], self.settings[11][_constants._columnId],
+                        _constants.valueWrapper(total-value, True))
+            status = 'Paid' if round(float(total)) == round(float(amountPaid)) else 'Not Paid'
+            setattr(self.tableData[row], self.settings[14][_constants._columnId],
+                    _constants.valueWrapper(status, True))
+            return True
+        return False
 
     def removeRow(self, position, parent=_QtCore.QModelIndex()):
         '''
@@ -119,3 +173,4 @@ class PurchaseReportProxyModel(_genericProxyTableModel.GenericProxyModel):
     '''
     def __init__(self, *args, **kwargs):
         super(PurchaseReportProxyModel, self).__init__(*args, **kwargs)
+        self.settings = _constants._purchaseReportSettings

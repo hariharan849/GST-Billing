@@ -13,7 +13,6 @@ from PySide import (
 )
 import constants as _constants
 import datetime as _datetime
-from database import SalesInvoice
 
 mutex = _QtCore.QMutex()
 
@@ -28,17 +27,18 @@ class SalesDetailsSaveWorker(_QtCore.QThread):
         for salesDetailsInfo in self.__salesDetailsInfo:
             mutex.lock()
             salesData = self.__manager.getSalesInfo(salesDetailsInfo.billNo.value)
-            salesData.customerName = salesDetailsInfo.customerName
-            salesData.cusotmerAddress = salesDetailsInfo.customerAddress
-            salesData.paidBy = salesDetailsInfo.paidBy
-            salesData.invoiceDate = _datetime.datetime.strptime(salesDetailsInfo.invoiceDate.value, '%d - %b - %y')
-            salesData.vendorCode = salesDetailsInfo.vendorCode
-            salesData.paymentTerms = salesDetailsInfo.paymentTerms
-            salesData.amount = salesDetailsInfo.amount
-            salesData.total = salesDetailsInfo.total
-            salesData.tax = salesDetailsInfo.tax
-            salesData.amountPaid = salesDetailsInfo.amountPaid
-            salesData.remarks = salesDetailsInfo.remarks
+            salesData.customerName = salesDetailsInfo.customerName.value
+            salesData.cusotmerAddress = salesDetailsInfo.customerAddress.value
+            salesData.paidBy = salesDetailsInfo.paidBy.value
+            salesData.invoiceDate = _datetime.datetime.strptime(salesDetailsInfo.invoiceDate.value, '%Y-%m-%d')
+            salesData.vendorCode = salesDetailsInfo.vendorCode.value
+            salesData.paymentTerms = salesDetailsInfo.paymentTerms.value
+            salesData.amount = float(salesDetailsInfo.amount.value)
+            salesData.total = float(salesDetailsInfo.total.value)
+            salesData.tax = float(salesDetailsInfo.tax.value)
+            salesData.amountPaid = float(salesDetailsInfo.amountPaid.value)
+            salesData.remarks = salesDetailsInfo.paymentRemarks.value
+            salesData.cancelReason = salesDetailsInfo.cancelReason.value
             salesData.save()
             mutex.unlock()
 
@@ -85,7 +85,9 @@ class SalesReportTableModel(_genericTableModel.GenericTableModel):
         '''
         Flags for editing/selecting a column
         '''
-        if index.column() == 2:
+        if index.column() in [2, 8]:
+            return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
+        if self.index(index.row(), 14).data() and self.index(index.row(), 14).data().strip():
             return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
         return super(SalesReportTableModel, self).flags(index)
 
@@ -108,9 +110,65 @@ class SalesReportTableModel(_genericTableModel.GenericTableModel):
         if role == _QtCore.Qt.BackgroundRole:
             if self._getData(row, column).flag:
                 return _QtGui.QBrush(_QtCore.Qt.green)
-            if self._getData(row, 14).value is not None:
-                return _QtGui.QBrush(_QtCore.Qt.darkGray)
+            if self._getData(row, 13) == 'Paid':
+                return _QtGui.QBrush(_QtCore.Qt.green)
+            if self._getData(row, 14).value:
+                return _QtGui.QBrush(_QtCore.Qt.darkYellow)
+        # if role == _QtCore.Qt.DisplayRole:
+        #     if column == 13 and round(float(self._getData(row, 9).value)) == round(float(self._getData(row, 10).value)):
+        #         return 'True'
+
         return super(SalesReportTableModel, self).data(index, role)
+
+
+    def setData(self, index, value, role=_QtCore.Qt.EditRole):
+        '''
+        Sets data for the specified cell upon edit
+        '''
+        if index.column() not in [7, 8, 9, 10, 11]:
+            return super(SalesReportTableModel, self).setData(index, value, role)
+        if role == _QtCore.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            if index.data() == value:
+                return False
+            setattr(self.tableData[row], self.settings[column][_constants._columnId],
+                    _constants.valueWrapper(value, True))
+            amount = float(getattr(self.tableData[row], self.settings[7][_constants._columnId]).value)
+            tax = float(getattr(self.tableData[row], self.settings[8][_constants._columnId]).value)
+            total = float(getattr(self.tableData[row], self.settings[9][_constants._columnId]).value)
+            amountPaid = float(getattr(self.tableData[row], self.settings[10][_constants._columnId]).value)
+            balance = float(getattr(self.tableData[row], self.settings[11][_constants._columnId]).value)
+            # print column, amount+tax
+            value = float(value)
+            if column in [7, 8]:
+                setattr(self.tableData[row], self.settings[9][_constants._columnId],
+                        _constants.valueWrapper(amount+tax, True))
+            elif column == 9:
+                setattr(self.tableData[row], self.settings[7][_constants._columnId],
+                        _constants.valueWrapper(total - tax, True))
+            elif column == 10:
+                # print total, value
+                if value > total:
+                    _QtGui.QMessageBox.critical(None, 'Error',
+                                                'Amount Paid is greater than Total',
+                                                buttons=_QtGui.QMessageBox.Ok)
+                    return True
+                setattr(self.tableData[row], self.settings[11][_constants._columnId],
+                        _constants.valueWrapper(total-value, True))
+            elif column == 11:
+                if value > total:
+                    _QtGui.QMessageBox.critical(None, 'Error',
+                                                'Balance is greater than Total',
+                                                buttons=_QtGui.QMessageBox.Ok)
+                    return True
+                setattr(self.tableData[row], self.settings[10][_constants._columnId],
+                        _constants.valueWrapper(total-value, True))
+            status = 'Paid' if round(float(total)) == round(float(amountPaid)) else 'Not Paid'
+            setattr(self.tableData[row], self.settings[13][_constants._columnId],
+                    _constants.valueWrapper(status, True))
+            return True
+        return False
 
     def removeRow(self, position, parent=_QtCore.QModelIndex()):
         '''

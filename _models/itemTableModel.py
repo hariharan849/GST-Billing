@@ -41,7 +41,7 @@ class ItemDetails(object):
 
 class ItemTableModel(GenericTableModel):
     '''
-    Quotation table model to display quotation information
+    Item table model to display item information
     '''
     def __init__(self, settings, parent=None):
         super(ItemTableModel, self).__init__([], settings, parent)

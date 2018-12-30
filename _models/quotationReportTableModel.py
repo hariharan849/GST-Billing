@@ -11,7 +11,6 @@ from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore
 )
-from database import QuotationDetails
 import constants as _constants
 import genericProxyTableModel as _genericProxyTableModel
 import genericTableModel as _genericTableModel
@@ -42,6 +41,7 @@ class QuotationDetailsSaveWorker(_QtCore.QThread):
                                                                           '%d - %b - %Y')
             quotationData.estAmount = quotationInfo.amount.value
             quotationData.estTotal = quotationInfo.total.value
+            quotationData.cancelReason = quotationInfo.cancelReason.value
             quotationData.save()
             mutex.unlock()
 
@@ -73,6 +73,10 @@ class QuotationReportTableModel(_genericTableModel.GenericTableModel):
         Flags for editing/selecting a column
         '''
         if index.column() == 2:
+            return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
+        # if index.column() == 8 and index.data().strip():
+        #     return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
+        if self.index(index.row(), 8).data().strip():
             return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
         return super(QuotationReportTableModel, self).flags(index)
 
@@ -110,8 +114,8 @@ class QuotationReportTableModel(_genericTableModel.GenericTableModel):
         if role == _QtCore.Qt.BackgroundRole:
             if self._getData(row, column).flag:
                 return _QtGui.QBrush(_QtCore.Qt.green)
-            if self._getData(row, 8).value is not None:
-                return _QtGui.QBrush(_QtCore.Qt.darkGray)
+            if self._getData(row, 8).value:
+                return _QtGui.QBrush(_QtCore.Qt.darkYellow)
         return super(QuotationReportTableModel, self).data(index, role)
 
     def removeRow(self, position, parent=_QtCore.QModelIndex()):

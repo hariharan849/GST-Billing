@@ -15,6 +15,7 @@ class PurchaseOrderTableDetails(object):
     '''
     Wrapper class for adding quotation information
     '''
+    __slots__ = ['itemCode', 'particulars', 'hsnCode', 'quantity']
     def __init__(self, itemCode, particulars, hsnCode, quantity):
         self.itemCode = _constants.valueWrapper(itemCode, False)
         self.particulars = _constants.valueWrapper(particulars, False)
@@ -69,6 +70,7 @@ class PurchaseOrderTableModel(GenericTableModel):
             hsnCode,
             quantity
         )
+        # self.tableData.append([itemCode, particulars, hsnCode, quantity])
         super(PurchaseOrderTableModel, self).insertRows(self.rowCount(self), [poInfo])
 
     def setFromTextData(self, itemCode, index):

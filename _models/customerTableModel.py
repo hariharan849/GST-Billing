@@ -14,7 +14,6 @@ from PySide import (
 import constants as _constants
 import genericProxyTableModel as _genericProxyTableModel
 import genericTableModel as _genericTableModel
-from database import CustomerNames
 
 
 mutex = _QtCore.QMutex()
@@ -43,6 +42,7 @@ class CustomerDetails(object):
     '''
     Wrapper class for adding customer information
     '''
+    __slots__ = ['customerCode', 'customerName', 'customerAddress', 'gstin', 'stateCode', 'contactNo']
     def __init__(self, customerCode, customerName, customerAddress, gstin, stateCode, contactNo):
         self.customerCode = _constants.valueWrapper(customerCode, False)
         self.customerName = _constants.valueWrapper(customerName, False)
@@ -116,3 +116,4 @@ class CustomerProxyModel(_genericProxyTableModel.GenericProxyModel):
     '''
     def __init__(self, *args, **kwargs):
         super(CustomerProxyModel, self).__init__(*args, **kwargs)
+        self.settings = _constants._addCustomerSettings

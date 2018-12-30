@@ -10,7 +10,6 @@ from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore
 )
-from database import CompanyItems
 import constants as _constants
 import genericProxyTableModel as _genericProxyTableModel
 import genericTableModel as _genericTableModel
@@ -41,6 +40,7 @@ class CompanyItemDetails(object):
     '''
     Wrapper class for adding company item information
     '''
+    __slots__ = ['itemCode', 'particulars', 'hsnCode', 'quantity', 'rate']
     def __init__(self, itemCode, particulars, hsnCode, quantity, rate):
         self.itemCode = _constants.valueWrapper(itemCode, False)
         self.particulars = _constants.valueWrapper(particulars, False)
@@ -111,3 +111,4 @@ class CompanyItemProxyModel(_genericProxyTableModel.GenericProxyModel):
     '''
     def __init__(self, *args, **kwargs):
         super(CompanyItemProxyModel, self).__init__(*args, **kwargs)
+        self.settings = _constants._companyItemSettings

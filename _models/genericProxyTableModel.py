@@ -9,7 +9,6 @@ from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore
 )
-import constants as _constants
 import re as _re
 
 
@@ -44,6 +43,8 @@ class GenericProxyModel(_QtGui.QSortFilterProxyModel):
                     indexDate = _QtCore.QDate.fromString(text, "dd - MMM - yyyy")
                     fromDate = _QtCore.QDate.fromString(regex.fromDate, "dd - MMM - yyyy")
                     toDate = _QtCore.QDate.fromString(regex.toDate, "dd - MMM - yyyy")
+                    if indexDate.year() == -4713:
+                        indexDate = _QtCore.QDate.fromString(text, "yyyy-MM-dd")
                     return indexDate >= fromDate and indexDate <= toDate
                 except Exception as ex:
                     pass

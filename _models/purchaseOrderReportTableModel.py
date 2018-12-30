@@ -38,6 +38,7 @@ class PurchaseOrderReportDetails(object):
     '''
     Wrapper class for adding Purchase order information
     '''
+    __slots__ = ['customerName', 'poDate', 'poNo', 'remarks', 'cancelReason']
     def __init__(self, customerName, poNo, poDate, remarks, cancel):
         self.customerName = _constants.valueWrapper(customerName, False)
         self.poDate = _constants.valueWrapper(poDate, False)
@@ -48,7 +49,7 @@ class PurchaseOrderReportDetails(object):
 
 class PurchaseOrderReportTableModel(_genericTableModel.GenericTableModel):
     '''
-    Vcouher table model to display voucher information
+    Purchase order table model to display po information
     '''
     def __init__(self, parent=None):
         super(PurchaseOrderReportTableModel, self).__init__([], _constants._purchaseOrderReportSettings, parent)
@@ -57,7 +58,7 @@ class PurchaseOrderReportTableModel(_genericTableModel.GenericTableModel):
         '''
         Flags for editing/selecting a column
         '''
-        if index.column() == 1 or (index.column() == 4 and not index.data()):
+        if index.column() == 1 or self.index(index.row(), 4).data().strip():
             return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
         return super(PurchaseOrderReportTableModel, self).flags(index)
 
@@ -83,7 +84,7 @@ class PurchaseOrderReportTableModel(_genericTableModel.GenericTableModel):
         if role == _QtCore.Qt.BackgroundRole:
             if self._getData(row, column).flag:
                 return _QtGui.QBrush(_QtCore.Qt.green)
-            if self._getData(row, 4).value is not None:
+            if self._getData(row, 4).value:
                 return _QtGui.QBrush(_QtCore.Qt.darkGray)
         return super(PurchaseOrderReportTableModel, self).data(index, role)
 

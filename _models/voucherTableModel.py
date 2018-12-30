@@ -32,20 +32,21 @@ class VoucherSaveWorker(_QtCore.QThread):
             mutex.lock()
             voucherData = self.__voucherManager.getVoucherInfo(voucherInfo.voucherNo.value)
             voucherData.customerName = voucherInfo.customerName.value
-            print _datetime.datetime.strptime(voucherInfo.debitDate.value, '%d - %b - %Y')
             voucherData.voucherDate = _datetime.datetime.strptime(voucherInfo.debitDate.value, '%d - %b - %Y')
             voucherData.remarks = voucherInfo.remarks.value
             voucherData.paymentType = voucherInfo.paymentType.value
             voucherData.chequeNo = voucherInfo.chequeNo.value
             voucherData.amount = voucherInfo.amount.value
+            voucherData.cancelReason = voucherInfo.cancelReason.value
             voucherData.save()
             mutex.unlock()
+
 
 class VoucherDetails(object):
     '''
     Wrapper class for adding voucher information
     '''
-    def __init__(self, voucherNo, customerName, debitDate, remarks, paymentType, chequeNo, amount):
+    def __init__(self, voucherNo, customerName, debitDate, remarks, paymentType, chequeNo, amount, cancelReason):
         self.voucherNo = _constants.valueWrapper(voucherNo, False)
         self.customerName = _constants.valueWrapper(customerName, False)
         self.debitDate = _constants.valueWrapper(debitDate, False)
@@ -53,6 +54,7 @@ class VoucherDetails(object):
         self.paymentType = _constants.valueWrapper(paymentType, False)
         self.chequeNo = _constants.valueWrapper(chequeNo, False)
         self.amount = _constants.valueWrapper(amount, False)
+        self.cancelReason = _constants.valueWrapper(cancelReason, False)
 
 
 class VoucherTableModel(_genericTableModel.GenericTableModel):
@@ -66,11 +68,11 @@ class VoucherTableModel(_genericTableModel.GenericTableModel):
         '''
         Sets flag for the columns
         '''
-        if index.column() == 0:
+        if index.column() == 0 or self._getData(index.row(), 7).value:
             return _QtCore.Qt.ItemIsEnabled | _QtCore.Qt.ItemIsSelectable
         return super(VoucherTableModel, self).flags(index)
 
-    def addVoucherInfo(self, voucherNo, customerName, voucherDate, remarks, paymentType, checkNo, amount):
+    def addVoucherInfo(self, voucherNo, customerName, voucherDate, remarks, paymentType, checkNo, amount, cancelReason=""):
         '''
         Adds Voucher information to the model
         voucherNo: str
@@ -88,7 +90,8 @@ class VoucherTableModel(_genericTableModel.GenericTableModel):
             remarks,
             paymentType,
             checkNo,
-            amount
+            amount,
+            cancelReason
         )
         super(VoucherTableModel, self).insertRows(self.rowCount(self), [voucherInfo])
 
@@ -99,6 +102,8 @@ class VoucherTableModel(_genericTableModel.GenericTableModel):
         row = index.row()
         column = index.column()
         if role == _QtCore.Qt.BackgroundRole:
+            if self._getData(row, 7).value:
+                return _QtGui.QBrush(_QtCore.Qt.lightGray)
             if self._getData(row, column).flag:
                 return _QtGui.QBrush(_QtCore.Qt.green)
         return super(VoucherTableModel, self).data(index, role)
@@ -122,3 +127,4 @@ class VoucherProxyModel(_genericProxyTableModel.GenericProxyModel):
     '''
     def __init__(self, *args, **kwargs):
         super(VoucherProxyModel, self).__init__(*args, **kwargs)
+        self.settings = _constants._voucherSettings

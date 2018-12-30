@@ -60,6 +60,9 @@ class DateDelegate(_QtGui.QItemDelegate):
             self.__dateEdit = _QtGui.QDateEdit(self.parent())  # create new editor
             value = index.model().data(index, _QtCore.Qt.DisplayRole)
             date = _QtCore.QDate.fromString(str(value), "dd - MMM - yyyy")
+            import datetime
+            if isinstance(value, datetime.datetime):
+                date = _QtCore.QDate.fromString(value.strftime('%d - %b - %Y'), "dd - MMM - yyyy")
             if date == _QtCore.QDate(-4713, 1, 1):
                 try:
                     date = _QtCore.QDate.fromString(str(value.split()[0]), "yyyy-MM-dd")
