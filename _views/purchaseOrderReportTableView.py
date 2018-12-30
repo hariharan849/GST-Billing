@@ -35,16 +35,14 @@ class PurchaseOrderReportTable(_genericTableView.GenericTableView):
         '''
         Triggered on mouse right click event
         '''
-
-        row = self.indexAt(self.parent().mapToParent(event.pos())).row()
         itemViewAction = _QtGui.QAction('View Items', self)
         itemViewAction.triggered.connect(self._viewItems)
 
         cancelAction = _QtGui.QAction('Cancel PO', self)
         cancelAction.triggered.connect(self._cancelPO)
 
-        # reasonAction = _QtGui.QAction('View Reason for Cancel', self)
-        # reasonAction.triggered.connect(self._viewReasonAction)
+        exportAction = _QtGui.QAction('Export to Excel', self)
+        exportAction.triggered.connect(self.parent().exportToExcel)
 
         super(PurchaseOrderReportTable, self).contextMenuEvent(event)
         self.menu.addAction(itemViewAction)
@@ -54,6 +52,8 @@ class PurchaseOrderReportTable(_genericTableView.GenericTableView):
 
         if not poDetails.cancelReason:
             self.menu.addAction(cancelAction)
+
+        self.menu.addAction(exportAction)
 
     def _viewItems(self):
         poNo = self.model().index(self.selectedIndexes()[-1].row(), 1).data()

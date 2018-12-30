@@ -29,7 +29,7 @@ class VoucherTableView(_genericTableView.GenericTableView):
         self.setItemDelegateForColumn(2, dateDelegate)
         dateDelegate.dataUpdate.connect(self.__updateDateInModel)
 
-        paymentTypes = ['Cash', 'Cheque', 'online']
+        paymentTypes = ('Cash', 'Cheque', 'online')
         comboDelegate = _customDelegates.ComboBoxDelegate(paymentTypes, self)
         self.setItemDelegateForColumn(4, comboDelegate)
         comboDelegate.paymentUpdate.connect(self.__updateComboInModel)
@@ -62,6 +62,10 @@ class VoucherTableView(_genericTableView.GenericTableView):
         importAction.triggered.connect(self.importSlot)
         self.menu.addAction(importAction)
 
+        cancelAction = _QtGui.QAction('Cancel Selected Bill', self)
+        cancelAction.triggered.connect(self.cancelSlot)
+        self.menu.addAction(cancelAction)
+
     @utils.showWaitCursor
     def importSlot(self):
         '''
@@ -72,15 +76,15 @@ class VoucherTableView(_genericTableView.GenericTableView):
         if not ok:
             return
         excelInfo = _pandas.read_excel(fileName)
-        voucherN_os = excelInfo['Voucher No']
+        voucherNos = excelInfo['Voucher No']
         customerNames = excelInfo['Customer Name']
-        creditDates = excelInfo['Credit Date' if self.parent()._type == 'credit' else 'Debit Date']
+        creditDates = excelInfo['Credit Date' if self.parent().type == 'credit' else 'Debit Date']
         remarks = excelInfo['Remarks']
         paymentModes = excelInfo['Payment Mode']
         chequeNos = excelInfo['Cheque No']
         amounts = excelInfo['Amount']
         for voucherNo, customerName, creditDate, remark, paymentMode, chequeNo, amount in zip(
-                voucherN_os, customerNames, creditDates, remarks, paymentModes, chequeNos, amounts):
+                voucherNos, customerNames, creditDates, remarks, paymentModes, chequeNos, amounts):
             voucherDate = _datetime.datetime.strptime(creditDate, "%d - %b - %Y")
             voucherInfo = (
                 voucherNo,
@@ -88,11 +92,13 @@ class VoucherTableView(_genericTableView.GenericTableView):
                 voucherDate,
                 remark,
                 paymentMode,
-                chequeNo if chequeNo != 'NaN' else '',
+                chequeNo if str(chequeNo) != 'nan' else '',
                 amount
             )
             self.model().sourceModel().addVoucherInfo(*voucherInfo)
             self.parent().voucherManager.saveVoucherInfo(*voucherInfo)
+            self.parent().updateAmountValue()
+
         _QtGui.QMessageBox.information(
             self,
             'Imported',
@@ -103,7 +109,7 @@ class VoucherTableView(_genericTableView.GenericTableView):
     @utils.showWaitCursor
     def exportSlot(self):
         '''
-        Slot for importing excel
+        Slot for exporting excel
         '''
         voucherFolder = _os.path.join(
             _os.path.dirname(
@@ -119,5 +125,15 @@ class VoucherTableView(_genericTableView.GenericTableView):
             voucherFolder,
             '{0}.xlsx'.format(_datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S'))
         )
-        super(VoucherTableView, self).exportSlot(fileName)
+        super(VoucherTableView, self).exportSlot(fileName, 7)
         _QtGui.QMessageBox.information(self, 'Exported', 'Voucher Information Exported Successfully.', buttons=_QtGui.QMessageBox.Ok)
+
+    def cancelSlot(self):
+        text, ok = _QtGui.QInputDialog.getText(self, 'Reason', 'Enter Reason for cancel')
+        if not ok:
+            return
+        voucherNo = self.model().index(self.selectedIndexes()[-1].row(), 2).data()
+        self.parent().cancelVoucher(voucherNo, text)
+
+        _QtGui.QMessageBox.information(self, 'Cancel', 'Quotation Details Cancelled from Table Successfully',
+                                       buttons=_QtGui.QMessageBox.Ok)

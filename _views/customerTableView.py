@@ -6,11 +6,8 @@ Customer view for displaying customer information
 """
 
 import os, datetime
-from PySide import (
-    QtCore as _QtCore,
-    QtGui as _QtGui
-)
-from delegates import customDelegates as _customDelegates
+from PySide import QtGui as _QtGui
+
 import genericTableView as _genericTableView
 from _widgets import utils
 import pandas
@@ -48,17 +45,17 @@ class CustomerTable(_genericTableView.GenericTableView):
         if not ok:
             return
         excelInfo = pandas.read_excel(fileName)
-        print excelInfo
+        customerCode = excelInfo['Customer Code']
         customerName = excelInfo['Customer Name']
         customerAddress = excelInfo['Customer Address']
         customerGstin = excelInfo['GSTIN']
         customerState = excelInfo['State Code']
         customerContact = excelInfo['Customer Contact']
-        for name, address, gstin, contact, state in zip(
-                customerName, customerAddress, customerGstin, customerContact, customerState):
+        for code, name, address, gstin, contact, state in zip(
+                customerCode, customerName, customerAddress, customerGstin, customerContact, customerState):
             self.model().sourceModel().addCustomerInfo(
-                name, address, gstin, state, contact)
-            self.parent().customerManager.saveCustomerInfo(name, address, gstin, int(state), contact)
+                code, name, address, gstin, state, contact)
+            self.parent().customerManager.saveCustomerInfo(str(code), str(name), str(address), str(gstin), int(state), str(contact))
         _QtGui.QMessageBox.information(self, 'Imported', 'Customer Information Imported Successfully.',
                                       buttons=_QtGui.QMessageBox.Ok)
 
@@ -67,7 +64,7 @@ class CustomerTable(_genericTableView.GenericTableView):
         '''
         Slot for importing excel
         '''
-        voucherFolder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Exports', 'Purchase Order')
+        voucherFolder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Exports', 'Customer Info')
         try:
             os.makedirs(voucherFolder)
         except:

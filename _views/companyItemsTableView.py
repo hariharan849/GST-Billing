@@ -9,11 +9,8 @@ import os, datetime
 import pandas
 
 import genericTableView as _genericTableView
-from delegates import customDelegates as _customDelegates
-from PySide import (
-    QtCore as _QtCore,
-    QtGui as _QtGui
-)
+from PySide import QtGui as _QtGui
+
 from _widgets import utils
 
 

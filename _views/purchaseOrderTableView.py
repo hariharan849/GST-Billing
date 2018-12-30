@@ -18,9 +18,12 @@ class PurchaseOrderTable(_genericTableView.GenericTableView):
     '''
     def __init__(self, parent=None):
         super(PurchaseOrderTable, self).__init__(parent)
+
         lineEditDelegate = _customDelegates.LineEditDelegate(self)
         self.setItemDelegateForColumn(0, lineEditDelegate)
         lineEditDelegate.lineEditUpdate.connect(self.__updateItems)
+
+        self.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)
 
     def contextMenuEvent(self, event):
         '''
@@ -50,7 +53,7 @@ class PurchaseOrderTable(_genericTableView.GenericTableView):
             pass
         fileName = os.path.join(voucherFolder,
                                 '{0}.xlsx'.format(datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S')))
-        super(PurchaseOrderTable, self).exportSlot(fileName)
+        super(PurchaseOrderTable, self).exportSlot(fileName, 4)
         QtGui.QMessageBox.information(self, 'Exported', 'Purchase Order Information Exported Successfully.', buttons=QtGui.QMessageBox.Ok)
 
     def __updateItems(self, text, index):

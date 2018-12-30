@@ -5,12 +5,15 @@
 quotationreportView for displaying quotation report model information
 """
 
+import os as _os
+import datetime as _datetime
 from PySide import QtGui as _QtGui
 from PySide.QtCore import Qt
 from PySide.QtGui import QAction
 
 from delegates import customDelegates as _customDelegates
 import genericTableView as _genericTableView
+from _widgets import utils
 
 class QuotationReportTable(_genericTableView.GenericTableView):
     '''
@@ -49,9 +52,13 @@ class QuotationReportTable(_genericTableView.GenericTableView):
         createPdfAction = _QtGui.QAction('Create PDF', self)
         createPdfAction.triggered.connect(lambda: self.parent().createPDF(quotationNo))
 
+        exportAction = _QtGui.QAction('Export to Excel', self)
+        exportAction.triggered.connect(self.parent().exportToExcel)
+
         if not quotationDetails.cancelReason:
             self.menu.addAction(cancelAction)
         self.menu.addAction(createPdfAction)
+        self.menu.addAction(exportAction)
 
     def _cancelPO(self):
         text, ok = _QtGui.QInputDialog.getText(self, 'Reason', 'Enter Reason for cancel')
@@ -64,3 +71,25 @@ class QuotationReportTable(_genericTableView.GenericTableView):
 
     def __updateDateInModel(self, date, index):
         self.model().sourceModel().setData(index, date.toString('dd - MMM - yyyy'), role=Qt.EditRole)
+
+    @utils.showWaitCursor
+    def exportSlot(self):
+        '''
+        Slot for exporting excel
+        '''
+        quotationFolder = _os.path.join(
+            _os.path.dirname(
+                _os.path.dirname(__file__)),
+            'Exports',
+            'Quotation'
+        )
+        try:
+            _os.makedirs(quotationFolder)
+        except:
+            pass
+        fileName = _os.path.join(
+            quotationFolder,
+            '{0}.xlsx'.format(_datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S'))
+        )
+        super(QuotationReportTable, self).exportSlot(fileName, 8)
+        _QtGui.QMessageBox.information(self, 'Exported', 'Quotation Information Exported Successfully.', buttons=_QtGui.QMessageBox.Ok)

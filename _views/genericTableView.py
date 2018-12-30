@@ -9,9 +9,8 @@ import collections
 import pandas
 
 
-from PySide.QtGui import QTableView, QMenu, QAction, QCursor, QHeaderView, QAbstractItemView, QApplication
+from PySide.QtGui import QTableView, QMenu, QAction, QCursor, QHeaderView, QAbstractItemView, QMessageBox
 from PySide.QtCore import QEvent, Qt, Signal
-from delegates import customDelegates
 
 class GenericTableView(QTableView):
     """ Class for implementing generic table view
@@ -31,13 +30,16 @@ class GenericTableView(QTableView):
         '''
         Triggered on mouse right click event
         '''
-        row = self.indexAt(self.parent().mapToParent(event.pos())).row()
+        if not len(self.selectedIndexes()):
+            return
+        row = self.selectedIndexes()[-1].row()
         col = self.indexAt(self.parent().mapToParent(event.pos())).column()
 
         self.menu = QMenu(self)
 
+        print row
         removeAction = QAction('Remove Row', self)
-        removeAction.triggered.connect(lambda: self.model().removeRow(row-1))
+        removeAction.triggered.connect(lambda: self.removeSlot(row))
         self.menu.addAction(removeAction)
 
         clearAction = QAction('Clear Table', self)
@@ -50,15 +52,17 @@ class GenericTableView(QTableView):
 
         self.menu.popup(QCursor.pos())
 
-    def exportSlot(self, filePath):
+    def exportSlot(self, filePath, cancelColumn=None):
         '''
         Slot for exporting to excel
         '''
         tableInformation = collections.OrderedDict()
         model = self.model()
-        for row in range(model.rowCount(self)):
-            for col, header in zip(range(model.columnCount(self)), model.settings):
-                if header[1] not in tableInformation:
+        for row in range(model.rowCount()):
+            for col, header in zip(range(model.columnCount()), model.settings):
+                if cancelColumn is not None and model.index(row, cancelColumn).data():
+                    continue
+                elif header[1] not in tableInformation:
                     tableInformation[header[1]] = [model.index(row, col).data()]
                 else:
                     tableInformation[header[1]].append(model.index(row, col).data())
@@ -73,6 +77,9 @@ class GenericTableView(QTableView):
         Slot for clear event
         Clears voucher model for table.
         '''
+        reply = QMessageBox.warning(self, 'Alert', 'Are You Sure To Delete all.', buttons=QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.StandardButton.No:
+            return
         self.model().sourceModel().clearTable()
         self.removeEntry.emit('all')
 
@@ -81,7 +88,16 @@ class GenericTableView(QTableView):
         Slot for remove event
         removes selected voucher model for table.
         '''
+        result = QMessageBox.critical(self, 'ERROR', 'Are you sure to remove the selected row',
+                                      buttons=QMessageBox.Ok | QMessageBox.Cancel)
+        if result == QMessageBox.StandardButton.Cancel:
+            return
         removeRows = []
+        if row:
+            self.removeEntry.emit(row)
+            self.model().removeRow(row)
+            removeRows.append(row)
+            return
         for index in reversed(self.selectedIndexes()):
             if index.row() not in removeRows:
                 self.removeEntry.emit(index.row())
