@@ -3,9 +3,8 @@
 User Interface for customer.
 '''
 
-from database import CustomerNames, CustomerManager
-from delegates import customDelegates as _customDelegates
-from models import constants, CustomerTableModel, CustomerProxyModel, CustomerSaveWorker
+from database import CustomerManager
+from models import CustomerTableModel, CustomerProxyModel, CustomerSaveWorker
 from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore
@@ -18,6 +17,7 @@ class CustomerWidget(_QtGui.QWidget):
     '''
     UI for credit voucher widget
     '''
+    settings = _QtCore.QSettings("customer.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, parent=None):
         super(CustomerWidget, self).__init__(parent)
         self.__customerUI = Ui_addCustomer()
@@ -25,6 +25,13 @@ class CustomerWidget(_QtGui.QWidget):
         self.__setupWidget()
         self.__connectWidget()
         self.__addWidgetValidators()
+
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     def __setupWidget(self):
         '''
@@ -56,7 +63,21 @@ class CustomerWidget(_QtGui.QWidget):
         self.__customerUI.removeButton.clicked.connect(self.__customerUI.customerTable.removeSlot)
         self.__customerUI.clearButton.clicked.connect(self.__customerUI.customerTable.clearSlot)
         self.__customerUI.importButton.clicked.connect(self.__customerUI.customerTable.importSlot)
+        self.__customerUI.customerCodeValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__customerUI.customerCodeValue, self.__customerUI.codeMandLabel))
+        self.__customerUI.customerNameValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__customerUI.customerNameValue, self.__customerUI.nameMandLabel))
+        self.__customerUI.customerAddressValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__customerUI.customerAddressValue, self.__customerUI.addressMandLabel))
+        self.__customerUI.customerGstinValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__customerUI.customerGstinValue, self.__customerUI.gstinMandLabel))
+        self.__customerUI.stateCodeValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__customerUI.stateCodeValue, self.__customerUI.stateMandLabel))
+        self.__customerUI.contactNoValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__customerUI.contactNoValue, self.__customerUI.contactMandLabel))
 
+        # self.__customerUI.inputGroupBox.toggled.connect(lambda: utils.toggleGroup(self.__customerUI.inputGroupBox))
+        # self.__customerUI.groupBox.toggled.connect(lambda: utils.toggleGroup(self.__customerUI.groupBox))
 
     def _disableAllLabels(self):
         self.__customerUI.codeMandLabel.setVisible(False)
@@ -195,3 +216,9 @@ class CustomerWidget(_QtGui.QWidget):
         worker = CustomerSaveWorker(self.__customerModelData.tableData, self.customerManager)
         worker.start()
         _QtGui.QMessageBox.information(self, 'Saved', 'Customer Details Saved Successfully.', buttons=_QtGui.QMessageBox.Ok)
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()

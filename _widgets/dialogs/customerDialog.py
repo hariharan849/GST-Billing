@@ -1,10 +1,5 @@
-from sys import argv, exit, path
 
-path.append(r'E:\darshan_auto_cable\widgets')
-path.append(r'E:\darshan_auto_cable')
-path.append(r'E:\darshan_auto_cable\ui')
-
-from database import CustomerNames
+from database import CustomerManager
 
 from PySide.QtGui import QDialog, QMessageBox
 from ui.customerDialogUI import Ui_Dialog
@@ -12,10 +7,9 @@ from ui.customerDialogUI import Ui_Dialog
 class CustomerDialog(QDialog):
     def __init__(self, name, address, gstin='', state='', parent=None):
         super(CustomerDialog, self).__init__(parent)
-
         self.__customerUIDialog = Ui_Dialog()
-
         self.__setupWidgets(name, address, gstin, state)
+        self.__customerManager = CustomerManager()
 
     def __setupWidgets(self, name, address, gstin, state):
         self.__customerUIDialog.setupUi(self)
@@ -61,13 +55,15 @@ class CustomerDialog(QDialog):
     def __saveCustomerChanges(self):
         if not self.__validateCustomerInfo():
             return
-        customerInfo = CustomerNames.create(
-            custName=self.__customerUIDialog.nameValue.text(),
-            custAddress=self.__customerUIDialog.addressValue.text(),
-            gstinText=self.__customerUIDialog.gstinValue.text(),
-            stateCode=int(self.__customerUIDialog.stateValue.text()),
-            contactNo=int(self.__customerUIDialog.contactNoValue.text()))
-        customerInfo.save()
+        custCode = max(self.__customerManager.fetchAllItemCodes())
+        args = (custCode,
+                self.__customerUIDialog.nameValue.text(),
+                self.__customerUIDialog.addressValue.text(),
+                self.__customerUIDialog.gstinValue.text(),
+                int(self.__customerUIDialog.stateValue.text()),
+                int(self.__customerUIDialog.contactNoValue.text())
+        )
+        self.__customerManager.saveCustomerInfo(*args)
         self.close()
 
     def __closeWidget(self):

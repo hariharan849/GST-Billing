@@ -1,5 +1,5 @@
 from sys import argv
-from PySide.QtGui import QWidget, QLabel, QHBoxLayout, QApplication, QFont, QTableWidget
+from PySide.QtGui import QWidget, QLabel, QHBoxLayout, QApplication, QFont
 from PySide.QtCore import Qt
 from appSettings import CUSTOMER_NAME
 

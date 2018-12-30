@@ -3,7 +3,6 @@
 User Interface for viewing sales reports.
 '''
 
-from datetime import date
 from collections import defaultdict
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -13,15 +12,14 @@ from PySide import (
     QtCore as _QtCore
 )
 from ui.chartUI import Ui_chart
-from database import SalesInvoice, SalesProducts
-import numpy as np
+from database import PurchaseManager, SalesManager
 
 
 class ChartWidget(_QtGui.QWidget):
     '''
     Creates Invoice Report UI with search and table.
     '''
-    def __init__(self, type='sales'):
+    def __init__(self):
         super(ChartWidget, self).__init__()
         self.__chartType = 'bo'
         self.__searchPressed = False
@@ -181,9 +179,12 @@ class ChartWidget(_QtGui.QWidget):
 
 
 class InvoiceChart(ChartWidget):
-    def __init__(self, database):
+    def __init__(self, dbtype):
         super(InvoiceChart, self).__init__()
-        self.__database = database
+        if dbtype == 'sales':
+            self.__manager = SalesManager(dbtype)
+        else:
+            self.__manager = PurchaseManager()
         self.__objXData = 'customerName'
         self.__objYData = 'amountPaid'
 
@@ -228,11 +229,10 @@ class InvoiceChart(ChartWidget):
         '''
         Searched invoice between from and to date
         '''
-        dataEntry = []
-        for entry in self.__database.objects:
-            print entry.billDate, self._chartUI.fromDateValue.dateTime().toPython()
-            if (entry.billDate >= self._chartUI.fromDateValue.dateTime().toPython()) and (entry.billDate <= self._chartUI.toDateValue.dateTime().toPython()):
-                dataEntry.append(entry)
+        dataEntry = self.__manager.fetchInfoWithinDate(
+            self._chartUI.fromDateValue.date().toPython(),
+            self._chartUI.toDateValue.date().toPython()
+        )
         customerDetails = defaultdict(float)
         for entry in dataEntry:
             if self.__objXData == 'customerName':
@@ -244,22 +244,26 @@ class InvoiceChart(ChartWidget):
 
 
 class ParticularsChart(ChartWidget):
-    def __init__(self, database):
+    def __init__(self, dbtype):
         super(ParticularsChart, self).__init__()
-        self.__database = database
+        if dbtype == 'sales':
+            self.__manager = SalesManager(dbtype)
+        else:
+            self.__manager = PurchaseManager()
 
     def fetchDataWithinDate(self):
         '''
         Searched invoice between from and to date
         '''
-        dataEntry = self.__database.objects(
-            (self.__database.bill_date >= self._chartUI.fromDateValue.date().toPython()) and
-            (self.__database.bill_date <= self._chartUI.toDateValue.date().toPython()))
+        dataEntry = self.__manager.fetchInfoWithinDate(
+            self._chartUI.fromDateValue.date().toPython(),
+            self._chartUI.toDateValue.date().toPython()
+        )
 
         particularDetails = defaultdict(float)
         for entry in dataEntry:
-            for particularInfo in SalesProducts.objects((SalesProducts.bill_no == entry.bill_no)):
-                particularDetails[particularInfo.particular] += 1
+            particularInfo = self.__manager.getItemInfo(entry.billNo)
+            particularDetails[particularInfo.particular] += 1
 
         return particularDetails
 

@@ -16,7 +16,7 @@ class HighlightingRowsTable(QTableView):
     def __init__(self, *args, **kw):
         super(HighlightingRowsTable, self).__init__(*args, **kw)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.seSelectionMode(QAbstractItemView.SingleSelection)
 
     def mouseMoveEvent(self, event):
         index = self.indexAt(event.pos())

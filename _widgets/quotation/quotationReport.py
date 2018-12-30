@@ -1,6 +1,6 @@
 
 
-from database import QuotationItems, QuotationManager
+from database import QuotationManager
 from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore
@@ -10,9 +10,10 @@ from ui.quotationReportUI import Ui_quotationReport
 from models import QuotationReportTableModel, QuotationReportProxyModel, constants, QuotationDetailsSaveWorker, ItemDetails
 from widgets import utils as _utils
 from _widgets import common
-from models import constants as _constants
 import os as _os
 import datetime as _datetime
+import collections as _collections
+import pandas as _pd
 from pdf_templates.quotationTemplate import QuotationTemplate
 
 from reportlab.lib.pagesizes import letter as _letter
@@ -58,6 +59,7 @@ class QuotationReportWidget(_QtGui.QWidget):
         self.__quotationReportUI.quotationReportTable.removeEntry.connect(self.__removeFromDatabase)
         self.__quotationReportUI.removeButton.clicked.connect(self.__quotationReportUI.quotationReportTable.removeSlot)
         self.__quotationReportUI.clearButton.clicked.connect(self.__quotationReportUI.quotationReportTable.clearSlot)
+        # self.__quotationReportUI.groupBox.toggled.connect(lambda: _utils.toggleGroup(self.__quotationReportUI.groupBox))
 
     def __removeFromDatabase(self, row='all'):
         '''
@@ -65,7 +67,7 @@ class QuotationReportWidget(_QtGui.QWidget):
         '''
         if row != 'all':
             quotationInfoEntry = self._manager.getQuotationDetailsInfo(self.__quotationProxyModel.index(row, 2).data())
-            quotationInfoEntry.delete()
+            quotationInfoEntry.delete_instance()
             if not quotationInfoEntry.cancelReason:
                 self.updateAmountValue(row)
             return
@@ -73,6 +75,35 @@ class QuotationReportWidget(_QtGui.QWidget):
         self.__quotationReportUI.amountValue.setText('')
         self.__quotationReportUI.taxValue.setText('')
         self.__quotationReportUI.totalValue.setText('')
+
+    def setData(self, index, value, role=_QtCore.Qt.EditRole):
+        '''
+        Sets data for the specified cell upon edit
+        '''
+        if index.column() not in [5, 6, 7]:
+            super(QuotationReportTableModel, self).setData(index, value, role)
+            return
+        if role == _QtCore.Qt.EditRole:
+            row = index.row()
+            column = index.column()
+            if index.data() == value:
+                return False
+            setattr(self.tableData[row], self.settings[column][constants._columnId],
+                    constants.valueWrapper(value, True))
+            amount = float(getattr(self.tableData[row], self.settings[5][constants._columnId]).value)
+            tax = float(getattr(self.tableData[row], self.settings[6][constants._columnId]).value)
+            total = float(getattr(self.tableData[row], self.settings[7][constants._columnId]).value)
+            if column == 5:
+                setattr(self.tableData[row], self.settings[7][constants._columnId],
+                        constants.valueWrapper(amount+tax, True))
+            elif column == 6:
+                setattr(self.tableData[row], self.settings[7][constants._columnId],
+                        constants.valueWrapper(amount + tax, True))
+            elif column == 7:
+                setattr(self.tableData[row], self.settings[5][constants._columnId],
+                        constants.valueWrapper(total-tax, True))
+            return True
+        return False
 
     def updateAmountValue(self, cancelRow=None):
         '''
@@ -126,10 +157,11 @@ class QuotationReportWidget(_QtGui.QWidget):
         '''
         Save Table change to database
         '''
-        quotationWorker = QuotationDetailsSaveWorker(self.__quotationModelData.tableData)
+        quotationWorker = QuotationDetailsSaveWorker(self.__quotationModelData.tableData, self._manager)
         quotationWorker.start()
         _QtGui.QMessageBox.information(self, 'Saved', 'Quotation Information Saved Successfully.',
                                        buttons=_QtGui.QMessageBox.Ok)
+        self.updateAmountValue()
 
     def __validateSearchDate(self):
         '''
@@ -176,18 +208,28 @@ class QuotationReportWidget(_QtGui.QWidget):
         self.__quotationReportUI.totalValue.setText('')
         self.__setQuotationInformation()
 
-
     def viewItems(self, quotationNo):
+        '''
+        launche dialog to dispay items associated with quotation no
+        '''
+        quotationDetail = self._manager.getQuotationDetailsInfo(quotationNo)
         quotationProduct = self._manager.getQuotationItemInfo(quotationNo)
 
-        itemInfoWidget = common.itemInfoWidget.ItemInfoWidget(quotationNo, quotationProduct, _constants._quotationSettings, parent=self)
-        itemInfoWidget.show()
+        dialog = _QtGui.QDialog(self)
+        itemInfoWidget = common.itemInfoWidget.ItemInfoWidget(quotationNo, quotationProduct, constants._quotationSettings, quotationDetail.remarks, parent=self)
+        layout = _QtGui.QHBoxLayout(dialog)
+        layout.addWidget(itemInfoWidget)
+        dialog.setWindowTitle('Quotation Item')
+        dialog.exec_()
 
     def cancelBill(self, quotationNo, cancelReason):
+        '''
+        Cancels quoation for the passed quotationno
+        '''
         quotationDetails = self._manager.getQuotationDetailsInfo(quotationNo)
         quotationDetails.cancelReason = cancelReason
         quotationTableData = [data for data in self.__quotationModelData.tableData if data.quotationNo.value == quotationNo]
-        quotationTableData[0].cancelReason = _constants.valueWrapper(cancelReason, False)
+        quotationTableData[0].cancelReason = constants.valueWrapper(cancelReason, False)
         quotationDetails.save()
         self.updateAmountValue()
 
@@ -195,6 +237,9 @@ class QuotationReportWidget(_QtGui.QWidget):
         return ItemDetails(itemInfo)
 
     def createPDF(self, quotationNo):
+        '''
+        Creates pdf for the passed quotation no
+        '''
         try:
             quotationDirectory = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))),
                           'quotation', quotationNo)
@@ -212,6 +257,9 @@ class QuotationReportWidget(_QtGui.QWidget):
                                        buttons=_QtGui.QMessageBox.Ok)
 
     def __getQuotationDetails(self, quotationNo):
+        '''
+        Returns quotation details for the passed quotation no
+        '''
         quotationDetails = self._manager.getQuotationDetailsInfo(quotationNo)
         quotationItem = self._manager.getQuotationItemInfo(quotationNo)
         particulars = []
@@ -284,3 +332,57 @@ class QuotationReportWidget(_QtGui.QWidget):
         }
         return billInfo
 
+    def exportToExcel(self):
+        '''
+        Exports all the quotation information to excel
+        '''
+        df = self._getDataframe()
+        exportPath = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), 'Exports', 'Quotation')
+        try:
+            _os.makedirs(exportPath)
+        except Exception as ex:
+            pass
+        now = _datetime.datetime.now()
+        file_name = '{}_{}_{}-{}_{}_{}.xlsx'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
+        writer = _pd.ExcelWriter(
+            _os.path.join(exportPath, file_name)
+        )
+        df.to_excel(writer, 'Sheet1', index=False, index_label=False)
+        writer.save()
+        _QtGui.QMessageBox.information(self, 'Saved', 'Quotation Information Exported Successfully.',
+                                       buttons=_QtGui.QMessageBox.Ok)
+
+    def _getDataframe(self):
+        '''
+        Returns dataframe for quotion table
+        '''
+        name, address, quotation_no, quotation_date = [], [], [], []
+        valid_until, amount, cgst, sgst, igst, total, remarks = [], [], [], [], [], [], []
+        for i in range(self.__quotationProxyModel.rowCount()):
+            entry = self._manager.getQuotationDetailsInfo(self.__quotationProxyModel.index(i, 2).data())
+            if entry.cancelReason:
+                continue
+            name.append(entry.customerName)
+            address.append(entry.customerAddress)
+            quotation_no.append(entry.quotationNo)
+            quotation_date.append(entry.quotationDate)
+
+            valid_until.append(entry.quotationValidity)
+            amount.append(entry.estAmount)
+            total.append(entry.estTotal)
+            remarks.append(entry.remarks)
+
+        purchase_values = _collections.OrderedDict()
+        purchase_values = _collections.OrderedDict()
+        purchase_values['Customer Name'] = name
+        purchase_values['Customer Address'] = address
+
+        purchase_values['Quotation No'] = quotation_no
+        purchase_values['Quotation Date'] = quotation_date
+        purchase_values['Valid Until Date'] = valid_until
+
+        purchase_values['Amount'] = amount
+        purchase_values['Total'] = total
+        purchase_values['Remarks'] = remarks
+
+        return _pd.DataFrame(purchase_values)

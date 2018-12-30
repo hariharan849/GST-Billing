@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 '''
-User Interface for credit Voucher.
+User Interface for credit/debit Voucher.
 '''
 
 import datetime as _datetime
 
-from database import Voucher, VoucherManager
+from database import VoucherManager
 from models import constants, VoucherTableModel, VoucherProxyModel, VoucherSaveWorker
 from PySide import (
     QtGui as _QtGui,
@@ -19,6 +19,7 @@ class VoucherWidget(_QtGui.QWidget):
     '''
     UI for credit voucher widget
     '''
+    settings = _QtCore.QSettings("voucher.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, parent=None, type='credit'):
         super(VoucherWidget, self).__init__(parent)
         self.__type = type
@@ -27,6 +28,11 @@ class VoucherWidget(_QtGui.QWidget):
         self.__setupWidget()
         self.__connectWidget()
         self.__addWidgetValidators()
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+    @property
+    def type(self):
+        return self.__type
 
     def __setVoucherInformation(self):
         '''
@@ -36,7 +42,6 @@ class VoucherWidget(_QtGui.QWidget):
         voucherData = self.voucherManager.fetchAllVoucherInfo()
         totalAmount = 0
         for info in voucherData:
-            print info.voucherDate.strftime('%d - %b - %Y')
             self.__voucherModelData.addVoucherInfo(
                 str(info.voucherNo),
                 str(info.customerName),
@@ -82,6 +87,9 @@ class VoucherWidget(_QtGui.QWidget):
         self.showMaximized()
 
     def _disableAllLabels(self):
+        '''
+        Disables all labels
+        '''
         self.__voucherUI.voucherMandLabel.setVisible(False)
         self.__voucherUI.nameMandLabel.setVisible(False)
         self.__voucherUI.remarksMandLabel.setVisible(False)
@@ -95,9 +103,6 @@ class VoucherWidget(_QtGui.QWidget):
         self.__voucherUI.billSearchValue.setValidator(_QtGui.QIntValidator())
         self.__voucherUI.voucherNoValue.setValidator(_QtGui.QIntValidator())
         self.__voucherUI.amountValue.setValidator(_QtGui.QDoubleValidator())
-        inpHeight = self.__voucherUI.inputGroupBox.height()#self.__voucherUI.inputGroupBox.height()
-        self.__voucherUI.inputGroupBox.toggled.connect(lambda: utils.toggleGroup(self.__voucherUI.inputGroupBox, inpHeight))
-        self.__voucherUI.groupBox.toggled.connect(lambda: utils.toggleGroup(self.__voucherUI.groupBox, self.__voucherUI.groupBox.height()))
 
     def __connectWidget(self):
         '''
@@ -110,9 +115,26 @@ class VoucherWidget(_QtGui.QWidget):
         self.__voucherUI.paymentValue.currentIndexChanged.connect(self.__flagChequeValue)
         self.__voucherUI.saveTableButton.clicked.connect(self.__saveTableChanges)
         self.__voucherUI.voucherTable.removeEntry.connect(self.__removeFromDatabase)
+
         self.__voucherUI.removeButton.clicked.connect(self.__voucherUI.voucherTable.removeSlot)
         self.__voucherUI.clearButton.clicked.connect(self.__voucherUI.voucherTable.clearSlot)
         self.__voucherUI.importButton.clicked.connect(self.__voucherUI.voucherTable.importSlot)
+
+        self.__voucherUI.voucherNoValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__voucherUI.voucherNoValue, self.__voucherUI.voucherMandLabel))
+        self.__voucherUI.nameValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__voucherUI.nameValue, self.__voucherUI.nameMandLabel))
+        self.__voucherUI.remarksValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__voucherUI.remarksValue, self.__voucherUI.remarksMandLabel))
+        self.__voucherUI.chequeNoValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__voucherUI.chequeNoValue, self.__voucherUI.chequeMandLabel))
+        self.__voucherUI.amountValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__voucherUI.amountValue, self.__voucherUI.amountMandLabel))
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     @utils.showWaitCursor
     def __resetSearchWidget(self):
@@ -159,7 +181,7 @@ class VoucherWidget(_QtGui.QWidget):
             _QtCore.QRegExp(customerName, _QtCore.Qt.CaseSensitive, _QtCore.QRegExp.FixedString), 1)
         self.__voucherProxyModel.setFilterByColumn(
             utils.dateFilter(fromDate.toString('dd - MMM - yyyy'), toDate.toString('dd - MMM - yyyy')), 2)
-        self.__updateAmountValue()
+        self.updateAmountValue()
 
     def __removeFromDatabase(self, row='all'):
         '''
@@ -169,7 +191,7 @@ class VoucherWidget(_QtGui.QWidget):
             voucherInfoEntry = self.voucherManager.getVoucherInfo(self.__voucherProxyModel.index(row, 0).data())
             amount = float(self.__voucherUI.totalAmountValue.text()) -  float(voucherInfoEntry.amount)
             self.__voucherUI.totalAmountValue.setText(str(amount))
-            voucherInfoEntry.delete()
+            voucherInfoEntry.delete_instance()
             return
         self.voucherManager.deleteVoucherInfo()
         self.__voucherUI.totalAmountValue.setText('')
@@ -181,7 +203,7 @@ class VoucherWidget(_QtGui.QWidget):
         worker = VoucherSaveWorker(self.__voucherModelData.tableData, self.voucherManager)
         worker.start()
         worker.wait()
-        self.__updateAmountValue()
+        self.updateAmountValue()
         _QtGui.QMessageBox.information(self, 'Saved', 'Voucher Information Saved Successfully.', buttons=_QtGui.QMessageBox.Ok)
 
     @utils.showWaitCursor
@@ -204,10 +226,10 @@ class VoucherWidget(_QtGui.QWidget):
         amount = str(self.__voucherUI.amountValue.text())
         voucherDate = voucherDate.strftime("%d - %b - %Y")
 
-        args = (voucherNo, customerName, voucherDate, remarks, paymentType, chequeNo, amount)
+        args = (voucherNo, customerName, voucherDate, remarks, paymentType, chequeNo, amount, '')
         self.voucherManager.saveVoucherInfo(*args)
         self.__voucherModelData.addVoucherInfo(*args)
-        self.__updateAmountValue()
+        self.updateAmountValue()
         self._discardChanges()
 
     def _discardChanges(self):
@@ -230,19 +252,15 @@ class VoucherWidget(_QtGui.QWidget):
         valid = True
         if not self.__voucherUI.voucherNoValue.text():
             self.__voucherUI.voucherMandLabel.setVisible(True)
-            # _QtGui.QMessageBox.critical(self, 'ERROR', 'Voucher Number must be entered', buttons=_QtGui.QMessageBox.Ok)
             valid = False
         if not self.__voucherUI.nameValue.text():
             self.__voucherUI.nameMandLabel.setVisible(True)
-            # _QtGui.QMessageBox.critical(self, 'ERROR', 'Name must be entered', buttons=_QtGui.QMessageBox.Ok)
             valid = False
         if not self.__voucherUI.remarksValue.text():
             self.__voucherUI.remarksMandLabel.setVisible(True)
-            # _QtGui.QMessageBox.critical(self, 'ERROR', 'Remarks must be entered', buttons=_QtGui.QMessageBox.Ok)
             valid = False
         if not self.__voucherUI.amountValue.text():
             self.__voucherUI.amountMandLabel.setVisible(True)
-            # _QtGui.QMessageBox.critical(self, 'ERROR', 'Amount must be entered', buttons=_QtGui.QMessageBox.Ok)
             valid = False
         if self.__voucherUI.paymentValue.currentText() == 'Cheque' and self.__voucherUI.chequeNoValue.text().strip():
             self.__voucherUI.chequeMandLabel.setVisible(True)
@@ -253,7 +271,7 @@ class VoucherWidget(_QtGui.QWidget):
             valid = False
         return valid
 
-    def __updateAmountValue(self):
+    def updateAmountValue(self):
         '''
         Received when model data is removed
         '''
@@ -261,3 +279,21 @@ class VoucherWidget(_QtGui.QWidget):
         for row in range(self.__voucherProxyModel.rowCount()):
             amount += float(self.__voucherProxyModel.index(row, 6).data())
         self.__voucherUI.totalAmountValue.setText(str(amount))
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()
+
+    def cancelVoucher(self, voucherNo, cancelReason):
+        '''
+        Cancel the voucher no
+        '''
+        voucherDetails = self.voucherManager.getVoucherInfo(voucherNo)
+        voucherDetails.cancelReason = cancelReason
+        voucherTableData = [data for data in self.__voucherModelData.tableData if
+                              data.voucherNo.value == voucherNo]
+        voucherTableData[0].cancelReason = constants.valueWrapper(cancelReason, False)
+        voucherDetails.save()
+        self.updateAmountValue()

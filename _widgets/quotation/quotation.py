@@ -3,8 +3,7 @@ import shutil
 import os as _os
 from PySide import (
     QtGui as _QtGui,
-    QtCore as _QtCore,
-    QtWebKit as _QtWebKit
+    QtCore as _QtCore
 )
 
 from _widgets.dialogs.customerDialog import CustomerDialog
@@ -16,12 +15,13 @@ from pdf_templates.quotationTemplate import QuotationTemplate
 
 from reportlab.lib.pagesizes import letter as _letter
 from reportlab.pdfgen.canvas import Canvas as _Canvas
+from _widgets import utils
 
 class QuotationWidget(_QtGui.QWidget):
     '''
     Creates Quotation UI.
     '''
-
+    settings = _QtCore.QSettings("quotation.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, parent=None):
         super(QuotationWidget, self).__init__(parent)
         self.__manager = QuotationManager()
@@ -32,6 +32,12 @@ class QuotationWidget(_QtGui.QWidget):
         self.__setUpWidget()
         self.__setDBVariables()
         self.__connectWidgets()
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     def __setDBVariables(self):
         '''
@@ -96,12 +102,27 @@ class QuotationWidget(_QtGui.QWidget):
         self.__quotationUI.quotationTable.taxUpdate.connect(self.update_all)
 
         self.__quotationUI.addButton.clicked.connect(self.__quotationUI.quotationTable.addRow)
-        self.__quotationUI.removeButton.clicked.connect(self.__quotationUI.quotationTable.removeSlot)
-        self.__quotationUI.clearButton.clicked.connect(self.__quotationUI.quotationTable.clearSlot)
+        self.__quotationUI.removeButton.clicked.connect(self.removeSlot)
+        self.__quotationUI.clearButton.clicked.connect(self.clearSlot)
         self.__quotationUI.importButton.clicked.connect(self.__quotationUI.quotationTable.importItems)
+
+        # self.__quotationUI.groupBox.toggled.connect(
+        #     lambda: _utils.toggleGroup(self.__quotationUI.groupBox))
+        # self.__quotationUI.groupBox_2.toggled.connect(
+        #     lambda: _utils.toggleGroup(self.__quotationUI.groupBox_2))
+        # self.__quotationUI.groupBox_3.toggled.connect(
+        #     lambda: _utils.toggleGroup(self.__quotationUI.groupBox_3))
 
         _utils.setCompleter(self.__quotationUI.customerNameValue, self.__customerInfo.keys())
         _utils.setCompleter(self.__quotationUI.customerAddressValue, self.__customerInfo.values())
+
+    def removeSlot(self):
+        self.__quotationUI.quotationTable.removeSlot()
+        self.populateAmountWidget()
+
+    def clearSlot(self):
+        self.__quotationUI.quotationTable.clearSlot()
+        self.populateAmountWidget()
 
     def __computeAmountValues(self, row):
         '''
@@ -275,19 +296,19 @@ class QuotationWidget(_QtGui.QWidget):
                 _QtGui.QMessageBox.critical(self, 'Rate must be Numbers')
                 return False
         if len(item_codes) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Item Codes column must be entered')
+            _QtGui.QMessageBox.critical(self, 'Error', 'All Item Codes column must be entered')
             return False
         if len(particulars) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Particulars column must be entered')
+            _QtGui.QMessageBox.critical(self, 'Error', 'All Particulars column must be entered')
             return False
         if len(hsn_codes) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All HSN Code column must be entered')
+            _QtGui.QMessageBox.critical(self, 'Error', 'All HSN Code column must be entered')
             return False
         if len(quantities) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Quantity column must be entered')
+            _QtGui.QMessageBox.critical(self, 'Error', 'All Quantity column must be entered')
             return False
         if len(rates) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Rate column must be entered')
+            _QtGui.QMessageBox.critical(self, 'Error', 'All Rate column must be entered')
             return False
 
         amount = 0
@@ -322,9 +343,11 @@ class QuotationWidget(_QtGui.QWidget):
 
         return True
 
+    @_utils.showWaitCursor
     def __handlePreview(self):
         if self.__quotationUI.customerNameValue.text().strip() and  self.__quotationUI.customerNameValue.text() not in self.__customerInfo:
             dialog = CustomerDialog(self.__quotationUI.customerNameValue.text(), self.__quotationUI.customerAddressValue.text())
+            dialog.setWindowTitle('Save Customer Information')
             dialog.exec_()
         if not self.__validateInputs():
             return
@@ -338,6 +361,7 @@ class QuotationWidget(_QtGui.QWidget):
         QuotationTemplate(canvas, quotationDetails)
         canvas.save()
         dialog = _utils.PreviewDialog(self, pdfPath)
+        dialog.setWindowTitle('Quotation Preview')
         dialog.exec_()
         shutil.rmtree(quotationDirectory)
 
@@ -379,7 +403,6 @@ class QuotationWidget(_QtGui.QWidget):
 
         quotationDetails = self.__getQuotationDetails()
         canvas = _Canvas(_os.path.join(quotationDirectory, '{0}.pdf'.format(self.__quotationUI.quotationNoValue.text())), pagesize=_letter)
-        print quotationDetails
         QuotationTemplate(canvas, quotationDetails)
         canvas.save()
 
@@ -453,3 +476,9 @@ class QuotationWidget(_QtGui.QWidget):
             'amounts': self.__amount
         }
         return billInfo
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()

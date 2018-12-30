@@ -6,7 +6,6 @@ from PySide import (
 )
 
 from _widgets.dialogs.customerDialog import CustomerDialog
-# from ui.salesInvoiceUI import Ui_SalesInvoice
 from ui.performaInvoiceUI import Ui_SalesInvoice
 from database import CompanyItems, CustomerManager, CompanyItemManager, SalesManager
 from widgets import utils as _utils
@@ -20,7 +19,7 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
     '''
     Creates Quotation UI.
     '''
-
+    settings = _QtCore.QSettings("performa.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, type='performa', parent=None):
         super(PerformaInvoiceWidget, self).__init__(parent)
         self._salesInvoiceUI = Ui_SalesInvoice()
@@ -32,17 +31,12 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
         self.__setVariables()
         self.__setUpWidget()
         self.__connectWidgets()
+        self.__saveRestore = _utils.StoreRestore(self.settings)
 
-
-    def _getSalesNo(self):
-        id = 1
-        try:
-            id = self._manager.getOrderedSalesNoInfo()
-            id = int(id) + 1
-        except Exception as ex:
-            print ex.message
-            pass
-        return id
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     def __setVariables(self):
         '''
@@ -67,10 +61,10 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
     def __getSalesBillNo(self):
         id = 1
         try:
-            id = self._manager.getOrderedSalesNoInfo()
+            id = self._manager.getOrderedSalesNoInfo().billNo
             id = int(id) + 1
         except Exception as ex:
-            print ex
+            print ex, '@@@@@@@@@@'
             pass
         return id
 
@@ -106,13 +100,31 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
         self._salesInvoiceUI.salesInvoiceTable.taxUpdate.connect(self.update_all)
 
         self._salesInvoiceUI.addButton.clicked.connect(self._salesInvoiceUI.salesInvoiceTable.addRow)
-        self._salesInvoiceUI.removeButton.clicked.connect(self._salesInvoiceUI.salesInvoiceTable.removeSlot)
-        self._salesInvoiceUI.clearButton.clicked.connect(self._salesInvoiceUI.salesInvoiceTable.clearSlot)
+        self._salesInvoiceUI.removeButton.clicked.connect(self.removeSlot)
+        self._salesInvoiceUI.clearButton.clicked.connect(self.clearSlot)
         self._salesInvoiceUI.importButton.clicked.connect(self._salesInvoiceUI.salesInvoiceTable.importItems)
+
+        # self._salesInvoiceUI.groupBox.toggled.connect(
+        #     lambda: _utils.toggleGroup(self._salesInvoiceUI.groupBox))
+        # self._salesInvoiceUI.groupBox_2.toggled.connect(
+        #     lambda: _utils.toggleGroup(self._salesInvoiceUI.groupBox_2))
+        # self._salesInvoiceUI.groupBox_3.toggled.connect(
+        #     lambda: _utils.toggleGroup(self._salesInvoiceUI.groupBox_3))
 
         _utils.setCompleter(self._salesInvoiceUI.customerNameValue, self.__customerInfo.keys())
         if self.__customerInfo:
             _utils.setCompleter(self._salesInvoiceUI.customerAddressValue, zip(*self.__customerInfo.values())[0])
+
+    def removeSlot(self):
+        '''
+        Clears selected row from table
+        '''
+        self._salesInvoiceUI.salesInvoiceTable.removeSlot()
+        self.__populateAmountWidget()
+
+    def clearSlot(self):
+        self._salesInvoiceUI.salesInvoiceTable.clearSlot()
+        self.__populateAmountWidget()
 
     def populateAmountWidget(self):
         '''
@@ -141,7 +153,7 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
         qty = _utils.getIntegralPart(self._salesInvoiceUI.salesInvoiceTable.item(row, 3).text())
         rate = self._salesInvoiceUI.salesInvoiceTable.item(row, 4).text()
         if not qty or not rate:
-            self.populateAmountWidget()
+            self.__populateAmountWidget()
             return
         cgst = 0
         if self._salesInvoiceUI.salesInvoiceTable.cellWidget(row, 5).currentText():
@@ -358,19 +370,19 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
                 _QtGui.QMessageBox.critical(self, 'Rate must be Numbers')
                 return False
         if len(item_codes) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Item Codes column must be entered', buttons=_QtGui.QMessageBox.Ok)
+            _QtGui.QMessageBox.critical(self, 'ERROR', 'All Item Codes column must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
         if len(particulars) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Particulars column must be entered', buttons=_QtGui.QMessageBox.Ok)
+            _QtGui.QMessageBox.critical(self, 'ERROR', 'All Particulars column must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
         if len(hsn_codes) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All HSN Code column must be entered', buttons=_QtGui.QMessageBox.Ok)
+            _QtGui.QMessageBox.critical(self, 'ERROR', 'All HSN Code column must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
         if len(quantities) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Quantity column must be entered', buttons=_QtGui.QMessageBox.Ok)
+            _QtGui.QMessageBox.critical(self, 'ERROR', 'All Quantity column must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
         if len(rates) != max_table_items:
-            _QtGui.QMessageBox.critical(self, 'All Rate column must be entered', buttons=_QtGui.QMessageBox.Ok)
+            _QtGui.QMessageBox.critical(self, 'ERROR', 'All Rate column must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
 
         amount = 0
@@ -407,7 +419,12 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
     _utils.showWaitCursor
     def __saveToPdf(self):
         if self._salesInvoiceUI.customerNameValue.text() not in self.__customerInfo:
-            dialog = CustomerDialog(self._salesInvoiceUI.customerNameValue.text(), self._salesInvoiceUI.customerAddressValue.text())
+            dialog = CustomerDialog(
+                self._salesInvoiceUI.customerNameValue.text(),
+                self._salesInvoiceUI.customerAddressValue.text(),
+                self._salesInvoiceUI.gstinValue.text(),
+                self._salesInvoiceUI.stateCodeValue.text())
+            dialog.setWindowTitle('Preview')
             dialog.exec_()
         if not self.__validateInputs():
             return
@@ -431,7 +448,8 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
             float(self._salesInvoiceUI.beforeTaxValue.text()),
             float(self._salesInvoiceUI.afterTaxValue.text()),
             float(self._salesInvoiceUI.amountPaidValue.text()),
-            self._salesInvoiceUI.remarksValue.toPlainText())
+            self._salesInvoiceUI.remarksValue.toPlainText(),
+        '')
 
         for (itemCode, particular, hsnCode, quantity, rate, cgst, sgst, igst) in zip(self.__itemCodes, self.__particulars, self.__hsnCode, self.__quantity,
                                                          self.__rate, self.__allCgst, self.__allSgst, self.__allIgst):
@@ -595,8 +613,8 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
             return
 
         import tempfile, shutil
-        quotationDirectory = tempfile.mkdtemp()
-        pdfPath = _os.path.join(quotationDirectory, '{0}.pdf'.format(self._salesInvoiceUI.billNoValue.text()))
+        salesDirectory = tempfile.mkdtemp()
+        pdfPath = _os.path.join(salesDirectory, '{0}.pdf'.format(self._salesInvoiceUI.billNoValue.text()))
         canvas = _Canvas(
             pdfPath,
             pagesize=_letter)
@@ -604,11 +622,18 @@ class PerformaInvoiceWidget(_QtGui.QWidget):
         invoiceTemplate.InvoiceTemplate(canvas, salesDetails, '')
         canvas.save()
         dialog = _utils.PreviewDialog(self, pdfPath)
+        dialog.setWindowTitle('')
         dialog.exec_()
-        shutil.rmtree(quotationDirectory)
+        shutil.rmtree(salesDirectory)
 
     _utils.showWaitCursor
     def handlePrint(self):
         dialog = _QtGui.QPrintDialog()
         if dialog.exec_() == _QtGui.QDialog.Accepted:
             self.handlePaintRequest(dialog.printer())
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()

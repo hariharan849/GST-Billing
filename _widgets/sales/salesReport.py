@@ -7,10 +7,10 @@ from PySide import (
     QtCore as _QtCore
 )
 import os as _os
+import pandas as _pd
 from ui.salesReportUI import Ui_salesReport
 from models import SalesReportTableModel, SalesReportProxyModel, constants, SalesDetailsSaveWorker
 from widgets import utils as _utils
-from models import constants as _constants
 from _widgets import common
 from pdf_templates import invoiceTemplate
 
@@ -30,6 +30,10 @@ class SalesReport(_QtGui.QWidget):
         self.__setupWidget()
         self.__connectWidget()
         self.__setSalesInformation()
+
+    @property
+    def type(self):
+        return self._type
 
     def __setupWidget(self):
         '''
@@ -59,6 +63,7 @@ class SalesReport(_QtGui.QWidget):
         self.__salesReportUI.salesReportTable.removeEntry.connect(self.__removeFromDatabase)
         self.__salesReportUI.removeButton.clicked.connect(self.__salesReportUI.salesReportTable.removeSlot)
         self.__salesReportUI.clearButton.clicked.connect(self.__salesReportUI.salesReportTable.clearSlot)
+        # self.__salesReportUI.groupBox.toggled.connect(lambda: _utils.toggleGroup(self.__salesReportUI.groupBox))
 
     def __removeFromDatabase(self, row='all'):
         '''
@@ -66,7 +71,7 @@ class SalesReport(_QtGui.QWidget):
         '''
         if row != 'all':
             salesInfoEntry = self._manager.getSalesInfo(self.__salesProxyModel.index(row, 2).data())
-            # salesInfoEntry.delete()
+            salesInfoEntry.delete_instance()
             if not salesInfoEntry.cancelReason:
                 self.updateAmountValue(row)
             return
@@ -132,7 +137,7 @@ class SalesReport(_QtGui.QWidget):
                 str(info.amountPaid),
                 str(info.total-info.amountPaid),
                 str(info.remarks),
-                'True',
+                'Paid' if round(float(info.total)) == round(float(info.amountPaid)) else 'Not Paid',
                 info.cancelReason
             )
             amount += float(info.amount)
@@ -149,10 +154,11 @@ class SalesReport(_QtGui.QWidget):
         '''
         Save Table change to database
         '''
-        salesWorker = SalesDetailsSaveWorker(self.__quotationModelData.tableData, self._manager)
+        salesWorker = SalesDetailsSaveWorker(self.__salesModelData.tableData, self._manager)
         salesWorker.start()
         _QtGui.QMessageBox.information(self, 'Saved', 'Sales Information Saved Successfully.',
                                        buttons=_QtGui.QMessageBox.Ok)
+        self.updateAmountValue()
 
     def __validateSearchDate(self):
         '''
@@ -178,6 +184,7 @@ class SalesReport(_QtGui.QWidget):
 
         self.__salesProxyModel.setFilterByColumn(
             _QtCore.QRegExp(quotationNo, _QtCore.Qt.CaseSensitive, _QtCore.QRegExp.FixedString),2)
+        # print customerName
         self.__salesProxyModel.setFilterByColumn(
             _QtCore.QRegExp(customerName, _QtCore.Qt.CaseSensitive, _QtCore.QRegExp.FixedString), 0)
         self.__salesProxyModel.setFilterByColumn(
@@ -198,9 +205,10 @@ class SalesReport(_QtGui.QWidget):
         self.__salesReportUI.balanceValue.setText('')
 
     def viewItems(self, billNo):
-        salesProduct = self._manager.getSalesItemInfo(billNo)
+        salesInfo = self._manager.getSalesInfo(billNo, self._type)
+        salesProduct = self._manager.getItemInfo(billNo)
 
-        itemInfoWidget = common.itemInfoWidget.ItemInfoWidget(billNo, salesProduct, _constants._quotationSettings, parent=self)
+        itemInfoWidget = common.itemInfoWidget.ItemInfoWidget(billNo, salesProduct, constants._quotationSettings, salesInfo.remarks, parent=self)
         itemInfoWidget.show()
 
     def addItemInfo(self, itemInfo):
@@ -210,7 +218,7 @@ class SalesReport(_QtGui.QWidget):
         billDetails = self._manager.getSalesInfo(billNo)
         billDetails.cancelReason = cancelReason
         salesTableData = [data for data in self.__salesModelData.tableData if data.billNo.value == billNo]
-        salesTableData[0].cancelReason = _constants.valueWrapper(cancelReason, False)
+        salesTableData[0].cancelReason = constants.valueWrapper(cancelReason, False)
         billDetails.save()
 
         self.updateAmountValue()
@@ -233,7 +241,7 @@ class SalesReport(_QtGui.QWidget):
 
     def __getSalesDetails(self, billNo):
         salesDetails = self._manager.getSalesInfo(billNo)
-        salesItem = self._manager.getSalesItemInfo(billNo)
+        salesItem = self._manager.getItemInfo(billNo)
         itemCodes = []
         particulars = []
         hsnCode = []
@@ -317,6 +325,78 @@ class SalesReport(_QtGui.QWidget):
 
         return billInfo
 
+    def exportToExcel(self, isLimited=False):
+        df = self._getDataframe(isLimited)
+        exportPath = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), 'Exports', 'Sales')
+        try:
+            _os.makedirs(exportPath)
+        except Exception as ex:
+            pass
+        now = _datetime.datetime.now()
+        file_name = '{}_{}_{}-{}_{}_{}.xlsx'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
+        writer = _pd.ExcelWriter(
+            _os.path.join(exportPath, file_name)
+        )
+        df.to_excel(writer, 'Sheet1', index=False, index_label=False)
+        writer.save()
+        _QtGui.QMessageBox.information(self, 'Saved', 'Sales Information Exported Successfully.',
+                                       buttons=_QtGui.QMessageBox.Ok)
+
+    def _getDataframe(self, isLimited):
+        name, address, gstin, stateCode = [], [], [], []
+        payBy, billNo, billDate, poNo, poDate = [], [], [], [], []
+        vendorCode, paymentTerms, dcCode, dcDate, vehicleNo = [], [], [], [], []
+        dispatchedThrough, amount, cgst, sgst, igst, total, amountPaid = [], [], [], [], [], [], []
+        balance, status, remarks = [], [], []
+
+        for i in range(self.__salesProxyModel.rowCount()):
+            entry = self._manager.getSalesInfo(self.__salesProxyModel.index(i, 2).data())
+            if entry.cancelReason:
+                continue
+            name.append(entry.customerName)
+            gstin.append(entry.customerGstin)
+            payBy.append(entry.paidBy)
+            billNo.append(entry.billNo)
+            billDate.append(str(entry.billDate))
+            amount.append(entry.amount)
+            total.append(entry.total)
+            amountPaid.append(entry.amountPaid)
+            remarks.append(entry.remarks)
+            if not isLimited:
+                address.append(entry.customerAddress)
+                stateCode.append(entry.customerStateCode)
+                poNo.append(entry.poNo)
+                poDate.append(str(entry.poDate))
+                vendorCode.append(entry.vendorCode)
+                paymentTerms.append(entry.paymentTerms)
+                dcCode.append(entry.dcCode)
+                dcDate.append(str(entry.dcDate))
+                vehicleNo.append(entry.vehicleNo)
+                dispatchedThrough.append(entry.dispatchedThrough)
+
+        salesValue = _collections.OrderedDict()
+        salesValue['Customer Name'] = name
+        salesValue['Paid By'] = payBy
+        salesValue['Bill No'] = billNo
+        salesValue['Bill Date'] = billDate
+        salesValue['Amount'] = amount
+        salesValue['Total'] = total
+        salesValue['Amount Paid'] = amountPaid
+        salesValue['Remarks'] = remarks
+        if not isLimited:
+            salesValue['Customer GSTIN'] = gstin
+            salesValue['Customer Address'] = address
+            salesValue['Customer State Code'] = stateCode
+            salesValue['PO No'] = poNo
+            salesValue['PO Date'] = poDate
+            salesValue['Vendor Code'] = vendorCode
+            salesValue['Payment Terms'] = paymentTerms
+            salesValue['DC Code'] = dcCode
+            salesValue['DC Date'] = dcDate
+            salesValue['Vehicle No'] = vehicleNo
+            salesValue['Dispatched Through'] = dispatchedThrough
+
+        return _pd.DataFrame(salesValue)
 
 
 class ItemDetails(object):
@@ -324,20 +404,20 @@ class ItemDetails(object):
     Wrapper class for adding quotation information
     '''
     def __init__(self, itemInfo):
-        self.itemCode = _constants.valueWrapper(itemInfo.itemCode, False)
-        self.particulars = _constants.valueWrapper(itemInfo.particular, False)
-        self.hsnCode = _constants.valueWrapper(itemInfo.hsnCode, False)
-        self.quantity = _constants.valueWrapper(itemInfo.quantity, False)
-        self.rate = _constants.valueWrapper(itemInfo.rate, False)
-        self.cgstValue = _constants.valueWrapper(itemInfo.cgst, False)
-        self.sgstValue = _constants.valueWrapper(itemInfo.sgst, False)
-        self.igstValue = _constants.valueWrapper(itemInfo.igst, False)
+        self.itemCode = constants.valueWrapper(itemInfo.itemCode, False)
+        self.particulars = constants.valueWrapper(itemInfo.particular, False)
+        self.hsnCode = constants.valueWrapper(itemInfo.hsnCode, False)
+        self.quantity = constants.valueWrapper(itemInfo.quantity, False)
+        self.rate = constants.valueWrapper(itemInfo.rate, False)
+        self.cgstValue = constants.valueWrapper(itemInfo.cgst, False)
+        self.sgstValue = constants.valueWrapper(itemInfo.sgst, False)
+        self.igstValue = constants.valueWrapper(itemInfo.igst, False)
 
         # taxValue = (amountWithoutTax * cgst) / 100.0 + (amountWithoutTax * sgst) / 100.0 + (
         #         amountWithoutTax * igst) / 100.0
         tax = itemInfo.cgst + itemInfo.sgst + itemInfo.igst
-        self.tax = _constants.valueWrapper(tax, False)
+        self.tax = constants.valueWrapper(tax, False)
 
         amount = float(itemInfo.quantity) * float(itemInfo.rate)
-        self.total = _constants.valueWrapper(amount+tax, False)
-        self.amount = _constants.valueWrapper(amount, False)
+        self.total = constants.valueWrapper(amount+tax, False)
+        self.amount = constants.valueWrapper(amount, False)

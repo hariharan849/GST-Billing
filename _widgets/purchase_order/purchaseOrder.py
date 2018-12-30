@@ -7,7 +7,6 @@ from PySide import (
 from _widgets import utils
 from ui.purchaseOrderUI import Ui_PurchaseOrder
 from models import PurchaseOrderTableModel
-from widgets import utils as _utils
 
 from database import PurchaseOrderManager, CompanyItemManager, CustomerManager
 
@@ -15,7 +14,7 @@ class PurchaseOrderWidget(_QtGui.QWidget):
     '''
     Creates Quotation UI.
     '''
-
+    settings = _QtCore.QSettings("po.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, parent=None):
         super(PurchaseOrderWidget, self).__init__(parent)
         self.__manager = PurchaseOrderManager()
@@ -25,6 +24,12 @@ class PurchaseOrderWidget(_QtGui.QWidget):
         self.__setVariables()
         self.__setUpWidget()
         self.__connectWidgets()
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     def __setVariables(self):
         '''
@@ -44,12 +49,13 @@ class PurchaseOrderWidget(_QtGui.QWidget):
 
         self.__poModelData = PurchaseOrderTableModel()
         self.__purchaseOrderUI.purchaseOrderTable.setModel(self.__poModelData)
-        # self.__purchaseOrderUI.purchaseOrderTable.horizontalHeader().setResizeMode(_QtGui.QHeaderView.Stretch)
-        # width = self.__purchaseOrderUI.purchaseOrderTable.size().width()
-        # self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(0, width / 15)
-        # self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(1, (width * 3.92) / 5.5)
-        # self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(2, width / 8)
-        # self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(3, width / 18)
+
+        self.__purchaseOrderUI.purchaseOrderTable.setGeometry(_QtGui.QApplication.desktop().screenGeometry())
+        width = self.size().width()
+        self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(0, width / 15)
+        self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(1, (width * 3.92) / 5.5)
+        self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(2, width / 8)
+        self.__purchaseOrderUI.purchaseOrderTable.setColumnWidth(3, width / 18)
         self.showMaximized()
 
     def __connectWidgets(self):
@@ -59,8 +65,10 @@ class PurchaseOrderWidget(_QtGui.QWidget):
         self.__purchaseOrderUI.removeButton.clicked.connect(self.__purchaseOrderUI.purchaseOrderTable.removeSlot)
         self.__purchaseOrderUI.clearButton.clicked.connect(self.__clearSlot)
         self.__purchaseOrderUI.importButton.clicked.connect(self.importItems)
+        # self.__purchaseOrderUI.groupBox.toggled.connect(
+        #     lambda: utils.toggleGroup(self.__purchaseOrderUI.groupBox))
 
-        _utils.setCompleter(self.__purchaseOrderUI.customerNameValue, self.__customerInfo.keys())
+        utils.setCompleter(self.__purchaseOrderUI.customerNameValue, self.__customerInfo.keys())
 
     @utils.showWaitCursor
     def importItems(self):
@@ -97,6 +105,10 @@ class PurchaseOrderWidget(_QtGui.QWidget):
             print ex.message
 
     def __validateInputs(self):
+        if not self.__purchaseOrderUI.poNoValue.text().strip():
+            _QtGui.QMessageBox.critical(self, 'ERROR', 'Purchase Order No must be entered', buttons=_QtGui.QMessageBox.Ok)
+            return False
+
         if not self.__purchaseOrderUI.customerNameValue.text().strip():
             _QtGui.QMessageBox.critical(self, 'ERROR', 'Customer Name must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
@@ -108,11 +120,10 @@ class PurchaseOrderWidget(_QtGui.QWidget):
 
         #TODO: validate for table items
         for poInfo in self.__poModelData.tableData:
-            # if not all((quotationInfo.particulars.value,
-            #         quotationInfo.hsnCode.value,
-            #         quotationInfo.quantity.value,
-            #         quotationInfo.rate.value,
-            #         quotationInfo.itemCode.value)):
+            # if not all((poInfo.particulars.value,
+            #             poInfo.hsnCode.value,
+            #             poInfo.quantity.value,
+            #             poInfo.itemCode.value)):
             #     _QtGui.QMessageBox.critical(self, 'ERROR', 'All table data must be entered',
             #                          buttons=_QtGui.QMessageBox.Ok)
             #     return False
@@ -135,11 +146,8 @@ class PurchaseOrderWidget(_QtGui.QWidget):
             return False
         return True
 
-    _utils.showWaitCursor
+    utils.showWaitCursor
     def __saveToPdf(self):
-        # if self.__purchaseOrderUI.customerNameValue.text() not in self.__customerInfo:
-        #     dialog = CustomerDialog(self.__purchaseOrderUI.customerNameValue.text(), self.__purchaseOrderUI.customerAddressValue.text())
-        #     dialog.exec_()
         if not self.__validateInputs():
             return
 
@@ -151,6 +159,8 @@ class PurchaseOrderWidget(_QtGui.QWidget):
         )
 
         for itemInfo in self.__poModelData.tableData:
+            if not itemInfo.itemCode.value or not itemInfo.particulars.value or not itemInfo.hsnCode.value or not itemInfo.quantity.value:
+                continue
             self.__manager.savePurchaseOrderProduct(
                 self.__purchaseOrderUI.poNoValue.text(),
                 itemInfo.itemCode.value,
@@ -170,8 +180,11 @@ class PurchaseOrderWidget(_QtGui.QWidget):
         self.__purchaseOrderUI.purchaseOrderTable.setModel(self.__poModelData)
         width = self.__purchaseOrderUI.purchaseOrderTable.horizontalHeader().size().width()
 
-    _utils.showWaitCursor
+    utils.showWaitCursor
     def __discardChanges(self):
+        '''
+        Resets all widgets to default value
+        '''
         self.__purchaseOrderUI.customerNameValue.setText('')
         self.__purchaseOrderUI.poDateValue.setDate(_QtCore.QDate.currentDate())
         self.__purchaseOrderUI.poNoValue.setText('')
@@ -181,3 +194,9 @@ class PurchaseOrderWidget(_QtGui.QWidget):
         self.__poModelData = PurchaseOrderTableModel()
         self.__purchaseOrderUI.purchaseOrderTable.setModel(self.__poModelData)
         width = self.__purchaseOrderUI.purchaseOrderTable.horizontalHeader().size().width()
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()

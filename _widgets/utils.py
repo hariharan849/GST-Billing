@@ -2,19 +2,17 @@ import decorator
 import collections as _collections
 import os as _os
 import pandas as _pandas
-# from widgets import utils
 from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore,
     QtWebKit as _QtWebKit
 )
-from mongoengine.queryset.visitor import Q
+from database import PurchaseManager, SalesManager
 
 
 class PreviewDialog(_QtGui.QDialog):
     def __init__(self, parent=None, file=None):
         super(PreviewDialog, self).__init__(parent)
-        # self.resize(620, 600)
         self.setAttribute(_QtCore.Qt.WA_DeleteOnClose)
 
         previewBox = _QtWebKit.QWebView()
@@ -22,7 +20,7 @@ class PreviewDialog(_QtGui.QDialog):
         previewBox.settings().setAttribute(_QtWebKit.QWebSettings.WebAttribute.DeveloperExtrasEnabled, True)
         previewBox.settings().setAttribute(_QtWebKit.QWebSettings.PrivateBrowsingEnabled, True)
         previewBox.settings().setAttribute(_QtWebKit.QWebSettings.LocalContentCanAccessRemoteUrls, True)
-        previewBox.load(_QtCore.QUrl().fromLocalFile(r"E:\deploy\quotation\1\1.pdf"))
+        previewBox.load(_QtCore.QUrl().fromLocalFile(file))
 
         layout_Main = _QtGui.QVBoxLayout()
         layout_Main.addWidget(previewBox)
@@ -256,7 +254,9 @@ class TableWidget(_QtGui.QTableWidget):
         super(TableWidget, self).__init__(parent)
         self.doubleClick = False
         self.cellEditable = False
-        self.__database = None
+
+        self.setGeometry(_QtGui.QApplication.desktop().screenGeometry())
+        self.__manager = None
 
         self.verticalHeader().setVisible(False)
         self.setAlternatingRowColors(True)
@@ -285,7 +285,7 @@ class TableWidget(_QtGui.QTableWidget):
         Populates the row based on information typed
         '''
         try:
-            obj = self.__database.objects(Q(itemCode = self.cellWidget(row, 0).text()))
+            obj = self.__manager.getItemInfoByCode(self.cellWidget(row, 0).text())
             is_code = True
         except:
             return
@@ -341,7 +341,7 @@ class TableWidget(_QtGui.QTableWidget):
         model = _QtGui.QStandardItemModel()
         completer.setModel(model)
 
-        completerString = [[item.itemCode, item.itemName] for item in self.__database.objects(Q(type=self.__type))]
+        completerString = [[item.itemCode, item.itemName] for item in self.__manager.fetchAllItemInfo()]
         for i, (itemCode, particular) in enumerate(completerString):
             item = _QtGui.QStandardItem(itemCode)
             item.setToolTip(particular)
@@ -349,57 +349,44 @@ class TableWidget(_QtGui.QTableWidget):
             item = _QtGui.QStandardItem(particular)
             item.setToolTip(particular)
             model.setItem(i, 0, item)
-        # completer_string = get_data(model, 'item code')
-        # if completer_string:
-        #     completer.setPopup(_set_abstract_item_view(completer.popup(), completer_string))
         return itemCodeValue
 
-    # def edit_finished(self, row):
-    #     try:
-    #         obj = SalesItems.get(SalesItems.item_code == self.cellWidget(row, 0).text())
-    #         is_code = True
-    #     except:
-    #         try:
-    #             obj = SalesItems.get(SalesItems.item_name == self.cellWidget(row, 0).text())
-    #             is_code = False
-    #         except:
-    #             return
-    #     if not obj:
-    #         return
-    #     if not (self.item(row, 1) and self.item(row, 1).text()):
-    #         particular = QTableWidgetItem(obj.item_name)
-    #         self.setItem(row, 1, particular)
-    #     if not (self.item(row, 2) and self.item(row, 2).text()):
-    #         hsn_code = QTableWidgetItem(str(obj.hsn_code))
-    #         self.setItem(row, 2, hsn_code)
-    #     if not (self.item(row, 4) and self.item(row, 4).text()):
-    #         item_price = QTableWidgetItem(str(obj.item_price))
-    #         self.setItem(row, 4, item_price)
-    #     if is_code:
-    #         item_code = self._get_item_code(row)
-    #         self.setCellWidget(row, 0, item_code)
-    #     self.repaint()
-
-    def setTableItems(self, database, type='purchase'):
+    def setTableItems(self, dbtype='purchase'):
         self.setRowCount(15)
         self.setColumnCount(11)
         headers = ['Item Code', 'Particulars', 'HSN Code', 'Qty', 'Rate', 'CGST', 'SGST', 'IGST', 'Amount', 'Tax',
                    'Total']
         self.setHorizontalHeaderLabels(headers)
-        self.__database = database
-        self.__type = type
+        if dbtype == 'purchase':
+            self.__manager = PurchaseManager()
+        else:
+            self.__manager = SalesManager(dbtype)
+        self.__type = dbtype
         for i in range(self.rowCount()):
-            self.__setTableWidgets(i)
+            self.setTableWidgets(i)
+
+        width = self.size().width()
+        self.setColumnWidth(0, width / 20)
+        self.setColumnWidth(1, (width * 1.92) / 5.5)
+        self.setColumnWidth(2, width / 13)
+        self.setColumnWidth(3, width / 18)
+        self.setColumnWidth(4, width / 18)
+        self.setColumnWidth(5, width / 25)
+        self.setColumnWidth(6, width / 25)
+        self.setColumnWidth(7, width / 25)
+        self.setColumnWidth(8, width / 18)
+        self.setColumnWidth(9, width / 18)
+        self.setColumnWidth(10, width / 18)
 
     def addRow(self):
         self.setRowCount(self.rowCount()+1)
-        self.__setTableWidgets(self.rowCount())
+        self.setTableWidgets(self.rowCount())
 
     def removeSlot(self):
         removeRows = []
         for index in reversed(self.selectedIndexes()):
             if index.row() not in removeRows:
-                self.__setTableWidgets(index.row())
+                self.setTableWidgets(index.row())
                 self.setItem(index.row(), 1, _QtGui.QTableWidgetItem(''))
                 self.setItem(index.row(), 2, _QtGui.QTableWidgetItem(''))
                 self.setItem(index.row(), 3, _QtGui.QTableWidgetItem(''))
@@ -411,7 +398,7 @@ class TableWidget(_QtGui.QTableWidget):
         Clears table
         '''
         self.clear()
-        self.setTableItems(self.__database, self.__type)
+        self.setTableItems(self.__type)
 
     @showWaitCursor
     def importItems(self):
@@ -479,7 +466,7 @@ class TableWidget(_QtGui.QTableWidget):
             _QtGui.QMessageBox.warning(self, 'Warning', 'Not Imported properly', buttons=_QtGui.QMessageBox.Ok)
             print ex.message
 
-    def __setTableWidgets(self, row):
+    def setTableWidgets(self, row):
         self.setCellWidget(row, 0, self.__getItemCode(row))
 
         cgst_value = CustomComboBox(('0', '9', '14'))
@@ -619,16 +606,114 @@ def expandCompletionView(popup, completionList):
         popup.frameWidth() + popup.fontMetrics().boundingRect(long_str).width())
     return popup
 
-def toggleGroup(ctrl, height):
+def toggleGroup(ctrl):
     state = ctrl.isChecked()
-    if state:
-        sizePolicy = _QtGui.QSizePolicy(_QtGui.QSizePolicy.Fixed, _QtGui.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(100)
-        # sizePolicy.setHeightForWidth(ctrl.sizePolicy().hasHeightForWidth())
-        ctrl.setSizePolicy(sizePolicy)
-        ctrl.setFixedHeight(height)
+    if not state:
+        ctrl.hide()
+
+
+class StoreRestore(object):
+    def __init__(self, settings):
+        self._settings = settings
+
+    def save(self, allWidgets):
+        for w in allWidgets:
+            mo = w.metaObject()
+            if w.objectName() != "":
+                name = w.objectName()
+                # print name
+                if isinstance(w, _QtGui.QLineEdit):
+                    value = w.text()
+                    self._settings.setValue(name, value)
+                if isinstance(w, _QtGui.QComboBox):
+                    index = w.currentIndex()
+                    text = w.itemText(index)
+                    self._settings.setValue(name, text)
+                if isinstance(w, _QtGui.QDateEdit):
+                    value = w.date()
+                    self._settings.setValue(name, value)
+                if isinstance(w, _QtGui.QTableView):
+                    self._settings.setValue(name, w.model().tableData)
+                if isinstance(w, _QtGui.QTableWidget):
+                    values = []
+                    for i in range(w.rowCount()):
+                        tableValue = []
+                        for j in range(9):
+                            if j == 0:
+                                tableValue.append(w.cellWidget(i, j).text())
+                            elif j in [5, 6, 7]:
+                                tableValue.append(w.cellWidget(i, j).currentText())
+                            else:
+                                tableValue.append(w.item(i, j).text() if w.item(i, j) else '')
+                        values.append(tableValue)
+                        self._settings.setValue(name, values)
+
+    def restore(self):
+        finfo = _QtCore.QFileInfo(self._settings.fileName())
+
+        if finfo.exists() and finfo.isFile():
+            for w in _QtGui.qApp.allWidgets():
+                mo = w.metaObject()
+                if w.objectName() != "":
+                    name = w.objectName()
+                    if isinstance(w, _QtGui.QLineEdit):
+
+                        value = self._settings.value(name)
+                        w.setText(value)
+                    if isinstance(w, _QtGui.QComboBox):
+                        index = w.currentIndex()
+                        value = self._settings.value(name)
+                        if value == '':
+                            continue
+                        index = w.findText(value)
+                        if index == -1:
+                            w.insertItems(0, [value])
+                            index = w.findText(value)
+                        w.setCurrentIndex(index)
+                    if isinstance(w, _QtGui.QDateEdit):
+                        value = self._settings.value(name)
+                        self._settings.setValue(name, value)
+                    if isinstance(w, _QtGui.QTableView):
+                        values = self._settings.value(name)
+                        rowCount = w.model().rowCount(w.model())
+                        extra = len(values) - rowCount
+                        if extra > 0:
+                            w.model().setRowCount(rowCount+extra-1)
+                            w.model().addPurchaseOrderInfo(itemCode='', particulars='', hsnCode='', quantity='')
+                        for value, modelItem in zip(values, w.model().tableData):
+                            modelItem.itemCode = value.itemCode
+                            modelItem.particulars = value.particulars
+                            modelItem.hsnCode = value.hsnCode
+                            modelItem.quantity = value.quantity
+                    if isinstance(w, _QtGui.QTableWidget):
+                        values = self._settings.value(name)
+                        rowCount = w.rowCount()
+                        extra = len(values) - rowCount
+                        if extra > 0:
+                            w.setRowCount(len(values)+extra-1)
+                            for i in range(extra):
+                                w.setTableWidgets(i+rowCount)
+
+                        for i, value in enumerate(values):
+                            for j in range(len(value)):
+                                if j == 0:
+                                    w.cellWidget(i, j).setText(value[0])
+                                elif j in [5, 6, 7]:
+                                    itemIndex = w.cellWidget(i, j).findText(value[j], _QtCore.Qt.MatchFixedString)
+                                    if itemIndex >= 0:
+                                        w.cellWidget(i, j).setCurrentIndex(itemIndex)
+                                    else:
+                                        w.cellWidget(i, j).setCurrentIndex(0)
+                                else:
+                                    item = _QtGui.QTableWidgetItem(value[j])
+                                    w.setItem(i, j, item)
+
+
+
+def setMandLabel(objValue, mandLabel):
+    if objValue.text().strip():
+        mandLabel.setVisible(False)
     else:
-        ctrl.setFixedHeight(30)
+        mandLabel.setVisible(True)
 
 dateFilter = _collections.namedtuple('dateFilter', 'fromDate toDate')

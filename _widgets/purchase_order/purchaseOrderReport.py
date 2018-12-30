@@ -7,6 +7,8 @@ PO report widget for displaying po information
 
 import collections as _collections
 import datetime as _datetime
+import pandas as _pd
+import os as _os
 
 from database import PurchaseOrderManager
 from PySide import (
@@ -58,6 +60,8 @@ class PurchaseReportWidget(_QtGui.QWidget):
         self.__purchaseOrderReportUI.purchaseOrderTable.removeEntry.connect(self.__removeFromDatabase)
         self.__purchaseOrderReportUI.removeButton.clicked.connect(self.__purchaseOrderReportUI.purchaseOrderTable.removeSlot)
         self.__purchaseOrderReportUI.clearButton.clicked.connect(self.__purchaseOrderReportUI.purchaseOrderTable.clearSlot)
+        # self.__purchaseOrderReportUI.groupBox.toggled.connect(
+        #     lambda: utils.toggleGroup(self.__purchaseOrderReportUI.groupBox))
 
     def __setPurchaseOrderInformation(self):
         '''
@@ -90,7 +94,7 @@ class PurchaseReportWidget(_QtGui.QWidget):
         '''
         if row != 'all':
             poInfoEntry = self.poManager.getPOInfo(self.__purchaseOrderProxyModel.index(row, 1).data())
-            poInfoEntry.delete()
+            poInfoEntry.delete_instance()
             return
         self.poManager.deletePOInfo()
 
@@ -117,9 +121,9 @@ class PurchaseReportWidget(_QtGui.QWidget):
         toDate = self.__purchaseOrderReportUI.toDateValue.date()
 
         self.__purchaseOrderProxyModel.setFilterByColumn(
-            _QtCore.QRegExp(quotationNo, _QtCore.Qt.CaseSensitive, _QtCore.QRegExp.FixedString),1)
+            _QtCore.QRegExp(quotationNo, _QtCore.Qt.CaseInsensitive, _QtCore.QRegExp.FixedString),1)
         self.__purchaseOrderProxyModel.setFilterByColumn(
-            _QtCore.QRegExp(customerName, _QtCore.Qt.CaseSensitive, _QtCore.QRegExp.FixedString), 0)
+            _QtCore.QRegExp(customerName, _QtCore.Qt.CaseInsensitive, _QtCore.QRegExp.FixedString), 0)
         self.__purchaseOrderProxyModel.setFilterByColumn(
             _constants.dateFilter(fromDate.toString('dd - MMM - yyyy'), toDate.toString('dd - MMM - yyyy')), 2)
 
@@ -143,19 +147,53 @@ class PurchaseReportWidget(_QtGui.QWidget):
         poTableData[0].cancelReason = _constants.valueWrapper(cancelReason, False)
         poDetails.save()
 
-    # def viewCancelReason(self, poNo):
-    #     poDetails = self.poManager.getPOInfo(poNo)
-    #     _QtGui.QMessageBox.warning(self, 'Reason for cancellation', poDetails.cancelReason, buttons=_QtGui.QMessageBox.Ok)
-
     def viewItems(self, poNo):
+        poDetails = self.poManager.getPOInfo(poNo)
         poProduct = self.poManager.getPurchaseOrderItemInfo(poNo)
 
-        itemInfoWidget = common.itemInfoWidget.ItemInfoWidget(poNo, poProduct, _constants._purchaseOrderSettings, parent=self)
-        itemInfoWidget.show()
-        itemInfoWidget.showMaximized()
+        dialog = _QtGui.QDialog(self)
+        itemInfoWidget = common.itemInfoWidget.ItemInfoWidget(poNo, poProduct, _constants._purchaseOrderSettings, poDetails.remarks, parent=self)
+        layout = _QtGui.QHBoxLayout(dialog)
+        layout.addWidget(itemInfoWidget)
+        dialog.setWindowTitle('Purchase Order Item')
+        dialog.exec_()
 
     def addItemInfo(self, itemInfo):
         return ItemDetails(itemInfo)
+
+    def exportToExcel(self):
+        df = self._getDataframe()
+        exportPath = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))), 'Exports', 'PurchaseOrder')
+        try:
+            _os.makedirs(exportPath)
+        except Exception as ex:
+            pass
+        now = _datetime.datetime.now()
+        file_name = '{}_{}_{}-{}_{}_{}.xlsx'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
+        writer = _pd.ExcelWriter(
+            _os.path.join(exportPath, file_name)
+        )
+        df.to_excel(writer, 'Sheet1', index=False, index_label=False)
+        writer.save()
+        _QtGui.QMessageBox.information(self, 'Saved', 'PurchaseOrder Information Exported Successfully.',
+                                       buttons=_QtGui.QMessageBox.Ok)
+
+    def _getDataframe(self):
+        names, po_nos, po_dates, remarks = [], [], [], []
+        for i in range(self.__purchaseOrderProxyModel.rowCount()):
+            entry = self.poManager.getPOInfo(self.__purchaseOrderProxyModel.index(i, 1).data())
+            if entry.cancelReason:
+                continue
+            names.append(entry.customerName)
+            po_nos.append(entry.poNo)
+            po_dates.append(entry.poDate)
+            remarks.append(entry.remarks)
+        purchase_values = _collections.OrderedDict()
+        purchase_values['Customer Name'] = names
+        purchase_values['PO No'] = po_nos
+        purchase_values['PO Date'] = po_dates
+        purchase_values['Remarks'] = remarks
+        return _pd.DataFrame(purchase_values)
 
 class ItemDetails(object):
     '''

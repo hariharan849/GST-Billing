@@ -4,13 +4,13 @@ from PySide import (
     QtCore as _QtCore
 )
 from performaInvoice import PerformaInvoiceWidget
-
+from _widgets import utils
 
 class SalesInvoiceWidget(PerformaInvoiceWidget):
     '''
     Creates Quotation UI.
     '''
-
+    settings = _QtCore.QSettings("sales.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, type='sales', parent=None):
         super(SalesInvoiceWidget, self).__init__(type, parent)
         self.performaNoValue = _QtGui.QLineEdit()
@@ -27,13 +27,29 @@ class SalesInvoiceWidget(PerformaInvoiceWidget):
 
         self._salesInvoiceUI.performaLayout.addWidget(self.performaNoValue)
         self._connectWidgets()
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+        print '---------'
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
+
+
+    def saveSlot(self):
+        print 'helo'
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()
 
     def _connectWidgets(self):
         self.performaNoValue.textChanged.connect(self._populateFromPerforma)
 
     def _populateFromPerforma(self, text):
         info = self._manager.getSalesInfo(self.performaNoValue.text(), 'performa')
-
+        if not info:
+            return
         self._salesInvoiceUI.customerNameValue.setText(info.customerName)
         self._salesInvoiceUI.customerAddressValue.setText(info.customerAddress)
         self._salesInvoiceUI.gstinValue.setText(info.customerGstin)
@@ -54,9 +70,11 @@ class SalesInvoiceWidget(PerformaInvoiceWidget):
 
         self._salesInvoiceUI.remarksValue.setText(info.remarks)
 
-        itemDetails = self._manager.getSalesItemInfo(info.billNo, 'performa')
+        itemDetails = self._manager.getItemInfo(info.billNo, 'performa')
         for row, item in enumerate(itemDetails):
             print dir(item), item.hsnCode
+            itemCodeWidget = self._salesInvoiceUI.salesInvoiceTable.cellWidget(row, 0)
+            itemCodeWidget.setText(item.itemCode)
             particular = _QtGui.QTableWidgetItem(item.particular)
             self._salesInvoiceUI.salesInvoiceTable.setItem(row, 1, particular)
             hsnCode = _QtGui.QTableWidgetItem(str(item.hsnCode))
@@ -65,4 +83,3 @@ class SalesInvoiceWidget(PerformaInvoiceWidget):
             self._salesInvoiceUI.salesInvoiceTable.setItem(row, 3, quantity)
             itemPrice = _QtGui.QTableWidgetItem(str(item.rate))
             self._salesInvoiceUI.salesInvoiceTable.setItem(row, 4, itemPrice)
-            

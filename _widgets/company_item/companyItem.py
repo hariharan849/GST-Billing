@@ -6,9 +6,8 @@ from PySide import (
     QtGui as _QtGui,
     QtCore as _QtCore
 )
-from models import constants, CompanyItemTableModel, CompanyItemProxyModel, CompanyItemSaveWorker
+from models import CompanyItemTableModel, CompanyItemProxyModel, CompanyItemSaveWorker
 from database import CompanyItemManager
-from delegates import customDelegates as _customDelegates
 from _widgets import utils
 
 
@@ -19,11 +18,20 @@ class CompanyItemWidget(_QtGui.QWidget):
     def __init__(self, parent=None, type='sales'):
         super(CompanyItemWidget, self).__init__(parent)
         self.type = type
+        self.settings = _QtCore.QSettings("company{0}item.ini".format(type), _QtCore.QSettings.IniFormat)
         self.companyItemManager = CompanyItemManager(type)
         self.__companyItemUI = Ui_companyItem()
         self.__setupWidget()
         self.__connectWidget()
         self.__addWidgetValidators()
+
+
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     def __setupWidget(self):
         '''
@@ -42,6 +50,13 @@ class CompanyItemWidget(_QtGui.QWidget):
 
         self.__companyItemUI.inputGroupBox.setTitle(self.type.capitalize())
         self._disableAllLabels()
+
+        self.__saveRestore = utils.StoreRestore(self.settings)
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
 
     def __addWidgetValidators(self):
         '''
@@ -62,6 +77,19 @@ class CompanyItemWidget(_QtGui.QWidget):
         self.__companyItemUI.removeButton.clicked.connect(self.__companyItemUI.companyItemsTable.removeSlot)
         self.__companyItemUI.clearButton.clicked.connect(self.__companyItemUI.companyItemsTable.clearSlot)
         self.__companyItemUI.importButton.clicked.connect(self.__importItems)
+        self.__companyItemUI.itemCodeValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__companyItemUI.itemCodeValue, self.__companyItemUI.codeMandLabel))
+        self.__companyItemUI.itemNameValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__companyItemUI.itemNameValue, self.__companyItemUI.nameMandLabel))
+        self.__companyItemUI.hsnCodeValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__companyItemUI.hsnCodeValue, self.__companyItemUI.hsnMandLabel))
+        self.__companyItemUI.quantityValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__companyItemUI.quantityValue, self.__companyItemUI.quantityMandLabel))
+        self.__companyItemUI.itemPriceValue.textChanged.connect(
+            lambda: utils.setMandLabel(self.__companyItemUI.itemPriceValue, self.__companyItemUI.priceMandLabel))
+
+        # self.__companyItemUI.inputGroupBox.toggled.connect(lambda: utils.toggleGroup(self.__companyItemUI.inputGroupBox))
+        # self.__companyItemUI.groupBox.toggled.connect(lambda: utils.toggleGroup(self.__companyItemUI.groupBox))
 
     def __setComapanyItemInformation(self, companyItemInfo=None):
         '''
@@ -102,7 +130,7 @@ class CompanyItemWidget(_QtGui.QWidget):
 
             for code, name, hsn, qt, rate in zip(itemCodes, particulars, hsnCodes, quantity, rates):
 
-                self.companyItemManager.saveCompanyItemInfo(code, name, hsn, qt, rate)
+                self.companyItemManager.saveCompanyItemInfo(str(code), str(name), str(hsn), str(qt), float(rate))
                 self.__companyModelData.addCompanyItemInfo(
                     str(code),
                     str(name),
@@ -112,7 +140,7 @@ class CompanyItemWidget(_QtGui.QWidget):
                 )
 
         except Exception as ex:
-            _QtGui.QMessageBoxwarning(self, 'Warning', 'Not Imported properly', buttons=_QtGui.QMessageBoxOk)
+            _QtGui.QMessageBox.warning(self, 'Warning', 'Not Imported properly', buttons=_QtGui.QMessageBox.Ok)
             print ex.message
 
     def __removeFromDatabase(self, row='all'):
@@ -222,3 +250,10 @@ class CompanyItemWidget(_QtGui.QWidget):
         worker = CompanyItemSaveWorker(self.__companyModelData.tableData, self.type, self.companyItemManager)
         worker.start()
         _QtGui.QMessageBox.information(self, 'Saved', 'Company Item Saved Successfully.', buttons=_QtGui.QMessageBox.Ok)
+
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()

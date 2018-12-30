@@ -9,13 +9,13 @@ from _widgets.dialogs.customerDialog import CustomerDialog
 from ui.purchaseInvoiceUI import Ui_PurchaseInvoice
 from database import CompanyItems, PurchaseManager, CustomerManager, CompanyItemManager
 from widgets import utils as _utils
-
+from _widgets import utils
 
 class PurchaseInvoiceWidget(_QtGui.QWidget):
     '''
-    Creates Quotation UI.
+    Creates Purchase invoice UI.
     '''
-
+    settings = _QtCore.QSettings("purchase.ini", _QtCore.QSettings.IniFormat)
     def __init__(self, parent=None):
         super(PurchaseInvoiceWidget, self).__init__(parent)
 
@@ -26,6 +26,7 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
         self.__setVariables()
         self.__setUpWidget()
         self.__connectWidgets()
+        self.__saveRestore = utils.StoreRestore(self.settings)
 
     def __setVariables(self):
         '''
@@ -51,7 +52,7 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
     def __getPurcahseNo(self):
         id = 1
         try:
-            id = self.__manager.getOrderedPurchaseNoInfo()
+            id = self.__manager.getOrderedPurchaseNoInfo().billNo
             id = int(id) + 1
         except Exception as ex:
             print ex.message
@@ -71,15 +72,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
 
         self.__purchaseInvoiceUI.purchaseTable.setTableItems(CompanyItems)
 
-        self.__purchaseInvoiceUI.addButton.clicked.connect(self.__purchaseInvoiceUI.purchaseTable.addRow)
-        self.__purchaseInvoiceUI.removeButton.clicked.connect(self.__purchaseInvoiceUI.purchaseTable.removeSlot)
-        self.__purchaseInvoiceUI.clearButton.clicked.connect(self.__purchaseInvoiceUI.purchaseTable.clearSlot)
-        self.__purchaseInvoiceUI.importButton.clicked.connect(self.__purchaseInvoiceUI.purchaseTable.importItems)
-
         paymentTypes = ('Cash', 'Cheque', 'online')
         self.__purchaseInvoiceUI.paymentValue.addItems(paymentTypes)
 
-        # self.updateAmountInformation()
         self.showMaximized()
 
     def __connectWidgets(self):
@@ -94,9 +89,27 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
         self.__purchaseInvoiceUI.purchaseTable.cellChanged.connect(self.__computeAmount)
         self.__purchaseInvoiceUI.purchaseTable.taxUpdate.connect(self.update_all)
 
+        self.__purchaseInvoiceUI.addButton.clicked.connect(self.__purchaseInvoiceUI.purchaseTable.addRow)
+        self.__purchaseInvoiceUI.removeButton.clicked.connect(self.removeSlot)
+        self.__purchaseInvoiceUI.clearButton.clicked.connect(self.clearSlot)
+        self.__purchaseInvoiceUI.importButton.clicked.connect(self.__purchaseInvoiceUI.purchaseTable.importItems)
+
+        saveShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+S"), self)
+        saveShortcut.activated.connect(self.saveSlot)
+        restoreShortcut = _QtGui.QShortcut(_QtGui.QKeySequence("Ctrl+R"), self)
+        restoreShortcut.activated.connect(self.restoreSlot)
+
         _utils.setCompleter(self.__purchaseInvoiceUI.customerNameValue, self.__customerInfo.keys())
         if self.__customerInfo:
             _utils.setCompleter(self.__purchaseInvoiceUI.customerAddressValue, zip(*self.__customerInfo.values())[0])
+
+    def removeSlot(self):
+        self.__purchaseInvoiceUI.purchaseTable.removeSlot()
+        self.__populateAmountWidget()
+
+    def clearSlot(self):
+        self.__purchaseInvoiceUI.purchaseTable.clearSlot()
+        self.__populateAmountWidget()
 
     def __computeAmountValues(self, row):
         '''
@@ -208,6 +221,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
                 self.__computeAmountValues(row)
 
     def __updateFromCustomerName(self):
+        '''
+        Updates customer address, gstin and statecode from customer name
+        '''
         customerInfo = self.__customerInfo.get(
             self.__purchaseInvoiceUI.customerNameValue.text(), None)
         if customerInfo:
@@ -216,6 +232,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
             self.__purchaseInvoiceUI.stateCodeValue.setText(str(customerInfo[2]))
 
     def __updateFromCustomerAddress(self):
+        '''
+        Updates customer name, gstin and statecode from customer address
+        '''
         customerInfo = {v[0]: [k]+v[1:] for k, v in self.__customerInfo.iteritems()}
         customerValues = customerInfo.get(
             self.__purchaseInvoiceUI.customerAddressValue.text(),
@@ -227,6 +246,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
 
 
     def __validateInputs(self):
+        '''
+        Validates purchase information before saving
+        '''
         if not self.__purchaseInvoiceUI.customerNameValue.text().strip():
             _QtGui.QMessageBox.critical(self, 'ERROR', 'Customer Name must be entered', buttons=_QtGui.QMessageBox.Ok)
             return False
@@ -323,6 +345,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
         return True
 
     def __saveToPdf(self):
+        '''
+        Saves purchase information to database
+        '''
         if self.__purchaseInvoiceUI.customerNameValue.text() not in self.__customerInfo:
             dialog = CustomerDialog(self.__purchaseInvoiceUI.customerNameValue.text(), self.__purchaseInvoiceUI.customerAddressValue.text())
             dialog.exec_()
@@ -357,19 +382,22 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
                 float(self.__sgst),
                 float(self.__igst)
             )
-            break
 
         _QtGui.QMessageBox.information(self, 'Saved', 'Entered Purchase Invoice saved successfully', buttons=_QtGui.QMessageBox.Ok)
         self.__discardChanges()
 
     def __discardChanges(self):
+        '''
+        Discards all widgets and default to empty string
+        '''
         self.__purchaseInvoiceUI.customerNameValue.setText('')
         self.__purchaseInvoiceUI.customerAddressValue.setText('')
         self.__purchaseInvoiceUI.gstinValue.setText('')
         self.__purchaseInvoiceUI.stateCodeValue.setText('')
+        self.__purchaseInvoiceUI.billNoValue.setText(str(self.__getPurcahseNo()))
         self.__purchaseInvoiceUI.billDateValue.setDate(_QtCore.QDate.currentDate())
         self.__purchaseInvoiceUI.dueDateValue.setDate(_QtCore.QDate.currentDate())
-        self.__purchaseInvoiceUI.purchaseTable.clear()
+        self.__purchaseInvoiceUI.purchaseTable.clearSlot()
         self.__purchaseInvoiceUI.beforeTaxValue.setText('')
         self.__purchaseInvoiceUI.afterTaxValue.setText('')
         self.__purchaseInvoiceUI.taxValue.setText('')
@@ -379,6 +407,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
         self.__purchaseInvoiceUI.amountWordsValue.setText('')
 
     def __getPurchaseDetails(self):
+        '''
+        returns dict of all purchase details that needs to be saved
+        '''
         amountBeforeRs, amountBeforePs = '{: 0.2f}'.format(float(self.__purchaseInvoiceUI.beforeTaxValue.text())).split('.')
         amountAfterRs, amountAfterPs = '{: 0.2f}'.format(float(self.__purchaseInvoiceUI.afterTaxValue.text())).split('.')
         cgstRs, cgstPs = '{: 0.2f}'.format(float('0.0')).split('.')
@@ -419,3 +450,9 @@ class PurchaseInvoiceWidget(_QtGui.QWidget):
             'amounts': self.__amount
         }
         return billInfo
+
+    def saveSlot(self):
+        self.__saveRestore.save(_QtGui.qApp.allWidgets())
+
+    def restoreSlot(self):
+        self.__saveRestore.restore()

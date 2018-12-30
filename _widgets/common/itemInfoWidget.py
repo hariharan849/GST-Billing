@@ -19,8 +19,8 @@ class ItemInfoWidget(_QtGui.QWidget):
         self._setupUI()
         self.connectWidgets()
         self.setWindowTitle('Items for bill no:' + str(self.__billNo))
-        self.setWindowFlags(_QtCore.Qt.WindowStaysOnTopHint)
-        self.showMaximized()
+        # self.setWindowFlags(_QtCore.Qt.WindowStaysOnTopHint)
+        # self.showMaximized()
         self.setWindowFlags(_QtCore.Qt.Window | _QtCore.Qt.WindowMinimizeButtonHint | _QtCore.Qt.WindowCloseButtonHint)
         self.show()
 
@@ -31,6 +31,7 @@ class ItemInfoWidget(_QtGui.QWidget):
         self.__itemProxyModel.setSourceModel(self.__itemModelData)
         self.__itemInfoUI.itemTable.setModel(self.__itemProxyModel)
 
+        print dir(self.__databaseInfo)
         for itemInfo in self.__databaseInfo:
             itemDetails = self.parent().addItemInfo(
                 itemInfo
