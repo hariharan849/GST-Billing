@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\purchaseOrderUI.ui'
 #
-# Created: Sat Oct 13 11:54:34 2018
+# Created: Sat Nov 24 16:32:54 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -25,6 +25,7 @@ class Ui_PurchaseOrder(object):
         self.gridLayout_2.addWidget(self.widget, 0, 0, 1, 4)
         self.groupBox = QtGui.QGroupBox(PurchaseOrder)
         self.groupBox.setTitle("")
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.gridLayout = QtGui.QGridLayout(self.groupBox)
         self.gridLayout.setObjectName("gridLayout")

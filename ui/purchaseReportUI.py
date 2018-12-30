@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\purchaseReportUI.ui'
 #
-# Created: Sat Oct 06 22:03:33 2018
+# Created: Sun Nov 25 15:59:44 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -30,7 +30,7 @@ class Ui_purchaseReport(object):
         self.gridLayout.addWidget(self.widget, 0, 0, 1, 2)
         self.groupBox = QtGui.QGroupBox(purchaseReport)
         self.groupBox.setTitle("")
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.verticalLayout = QtGui.QVBoxLayout(self.groupBox)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -139,6 +139,7 @@ class Ui_purchaseReport(object):
         self.horizontalLayout_4.addItem(spacerItem)
         self.gridLayout.addLayout(self.horizontalLayout_4, 2, 0, 1, 2)
         self.purchaseReportTable = PurchaseReportTable(purchaseReport)
+        self.purchaseReportTable.setAlternatingRowColors(True)
         self.purchaseReportTable.setObjectName("purchaseReportTable")
         self.gridLayout.addWidget(self.purchaseReportTable, 3, 0, 1, 2)
         spacerItem1 = QtGui.QSpacerItem(1278, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)

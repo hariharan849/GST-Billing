@@ -25,11 +25,17 @@
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string/>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
@@ -204,11 +210,17 @@
    </item>
    <item row="1" column="1">
     <widget class="QGroupBox" name="groupBox_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string/>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">
@@ -272,7 +284,7 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>150</width>
+          <width>250</width>
           <height>30</height>
          </size>
         </property>
@@ -307,7 +319,7 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>150</width>
+          <width>250</width>
           <height>30</height>
          </size>
         </property>
@@ -427,7 +439,7 @@
       <string/>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
       <item row="0" column="0">

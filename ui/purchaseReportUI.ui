@@ -36,7 +36,7 @@
       <string/>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -306,7 +306,11 @@
     </layout>
    </item>
    <item row="3" column="0" colspan="2">
-    <widget class="PurchaseReportTable" name="purchaseReportTable"/>
+    <widget class="PurchaseReportTable" name="purchaseReportTable">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item row="4" column="0">
     <spacer name="horizontalSpacer">

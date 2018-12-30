@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\quotationReportUI.ui'
 #
-# Created: Sat Oct 06 22:05:50 2018
+# Created: Sun Nov 25 16:06:21 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -25,7 +25,7 @@ class Ui_quotationReport(object):
         self.gridLayout.addWidget(self.widget_2, 0, 0, 1, 2)
         self.groupBox = QtGui.QGroupBox(quotationReport)
         self.groupBox.setTitle("")
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.verticalLayout = QtGui.QVBoxLayout(self.groupBox)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -134,6 +134,7 @@ class Ui_quotationReport(object):
         self.horizontalLayout_4.addItem(spacerItem)
         self.gridLayout.addLayout(self.horizontalLayout_4, 2, 0, 1, 2)
         self.quotationReportTable = QuotationReportTable(quotationReport)
+        self.quotationReportTable.setAlternatingRowColors(True)
         self.quotationReportTable.setObjectName("quotationReportTable")
         self.gridLayout.addWidget(self.quotationReportTable, 3, 0, 1, 2)
         spacerItem1 = QtGui.QSpacerItem(1278, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -198,7 +199,7 @@ class Ui_quotationReport(object):
 
     def retranslateUi(self, quotationReport):
         quotationReport.setWindowTitle(QtGui.QApplication.translate("quotationReport", "Form", None, QtGui.QApplication.UnicodeUTF8))
-        self.customerSearchValue.setPlaceholderText(QtGui.QApplication.translate("quotationReport", "Enter Vendor Name", None, QtGui.QApplication.UnicodeUTF8))
+        self.customerSearchValue.setPlaceholderText(QtGui.QApplication.translate("quotationReport", "Enter Customer Name", None, QtGui.QApplication.UnicodeUTF8))
         self.billSearchValue.setPlaceholderText(QtGui.QApplication.translate("quotationReport", "Enter Quotation No", None, QtGui.QApplication.UnicodeUTF8))
         self.fromDateLabel.setText(QtGui.QApplication.translate("quotationReport", "From Date", None, QtGui.QApplication.UnicodeUTF8))
         self.fromDateValue.setDisplayFormat(QtGui.QApplication.translate("quotationReport", "dd-MMM-yyyy", None, QtGui.QApplication.UnicodeUTF8))

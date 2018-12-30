@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\purchaseInvoiceUI.ui'
 #
-# Created: Sat Oct 13 11:35:13 2018
+# Created: Sat Nov 24 16:32:18 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -24,8 +24,13 @@ class Ui_PurchaseInvoice(object):
         self.widget.setObjectName("widget")
         self.gridLayout_3.addWidget(self.widget, 0, 0, 1, 2)
         self.groupBox = QtGui.QGroupBox(PurchaseInvoice)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
+        self.groupBox.setSizePolicy(sizePolicy)
         self.groupBox.setTitle("")
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.gridLayout = QtGui.QGridLayout(self.groupBox)
         self.gridLayout.setObjectName("gridLayout")
@@ -106,8 +111,13 @@ class Ui_PurchaseInvoice(object):
         self.gridLayout.addWidget(self.stateCodeValue, 5, 1, 1, 1)
         self.gridLayout_3.addWidget(self.groupBox, 1, 0, 1, 1)
         self.groupBox_2 = QtGui.QGroupBox(PurchaseInvoice)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.groupBox_2.sizePolicy().hasHeightForWidth())
+        self.groupBox_2.setSizePolicy(sizePolicy)
         self.groupBox_2.setTitle("")
-        self.groupBox_2.setCheckable(True)
+        self.groupBox_2.setCheckable(False)
         self.groupBox_2.setObjectName("groupBox_2")
         self.gridLayout_4 = QtGui.QGridLayout(self.groupBox_2)
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -137,7 +147,7 @@ class Ui_PurchaseInvoice(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.billDateValue.sizePolicy().hasHeightForWidth())
         self.billDateValue.setSizePolicy(sizePolicy)
-        self.billDateValue.setMinimumSize(QtCore.QSize(150, 30))
+        self.billDateValue.setMinimumSize(QtCore.QSize(250, 30))
         self.billDateValue.setCalendarPopup(True)
         self.billDateValue.setObjectName("billDateValue")
         self.gridLayout_4.addWidget(self.billDateValue, 1, 1, 1, 1)
@@ -152,7 +162,7 @@ class Ui_PurchaseInvoice(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.dueDateValue.sizePolicy().hasHeightForWidth())
         self.dueDateValue.setSizePolicy(sizePolicy)
-        self.dueDateValue.setMinimumSize(QtCore.QSize(150, 30))
+        self.dueDateValue.setMinimumSize(QtCore.QSize(250, 30))
         self.dueDateValue.setCalendarPopup(True)
         self.dueDateValue.setObjectName("dueDateValue")
         self.gridLayout_4.addWidget(self.dueDateValue, 2, 1, 1, 1)
@@ -219,7 +229,7 @@ class Ui_PurchaseInvoice(object):
         self.groupBox_3.setMinimumSize(QtCore.QSize(0, 40))
         self.groupBox_3.setMaximumSize(QtCore.QSize(16777215, 210))
         self.groupBox_3.setTitle("")
-        self.groupBox_3.setCheckable(True)
+        self.groupBox_3.setCheckable(False)
         self.groupBox_3.setObjectName("groupBox_3")
         self.gridLayout_6 = QtGui.QGridLayout(self.groupBox_3)
         self.gridLayout_6.setObjectName("gridLayout_6")

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'chartUI.ui'
+# Form implementation generated from reading ui file '.\chartUI.ui'
 #
-# Created: Tue Sep 25 07:37:24 2018
+# Created: Sat Nov 24 16:31:25 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -35,7 +35,7 @@ class Ui_chart(object):
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
         self.groupBox.setSizePolicy(sizePolicy)
         self.groupBox.setTitle("")
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.gridLayout_2 = QtGui.QGridLayout(self.groupBox)
         self.gridLayout_2.setObjectName("gridLayout_2")

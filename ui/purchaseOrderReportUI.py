@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\purchaseOrderReportUI.ui'
 #
-# Created: Sat Sep 29 10:26:42 2018
+# Created: Sat Nov 24 16:32:45 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -30,7 +30,7 @@ class Ui_purchaseOrderReport(object):
         self.gridLayout.addWidget(self.widget, 0, 0, 1, 2)
         self.groupBox = QtGui.QGroupBox(purchaseOrderReport)
         self.groupBox.setTitle("")
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.verticalLayout = QtGui.QVBoxLayout(self.groupBox)
         self.verticalLayout.setObjectName("verticalLayout")

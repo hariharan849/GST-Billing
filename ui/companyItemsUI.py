@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'companyItemsUI.ui'
+# Form implementation generated from reading ui file '.\companyItemsUI.ui'
 #
-# Created: Sat Oct 13 09:41:54 2018
+# Created: Sat Nov 24 16:31:41 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -30,6 +30,7 @@ class Ui_companyItem(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.inputGroupBox.sizePolicy().hasHeightForWidth())
         self.inputGroupBox.setSizePolicy(sizePolicy)
+        self.inputGroupBox.setCheckable(False)
         self.inputGroupBox.setObjectName("inputGroupBox")
         self.gridLayout = QtGui.QGridLayout(self.inputGroupBox)
         self.gridLayout.setObjectName("gridLayout")
@@ -230,7 +231,7 @@ class Ui_companyItem(object):
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
         self.groupBox.setSizePolicy(sizePolicy)
         self.groupBox.setMinimumSize(QtCore.QSize(0, 100))
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.gridLayout_4 = QtGui.QGridLayout(self.groupBox)
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -294,14 +295,29 @@ class Ui_companyItem(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.gridLayout_2.addLayout(self.verticalLayout, 0, 0, 1, 3)
         self.removeButton = QtGui.QPushButton(companyItem)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.removeButton.sizePolicy().hasHeightForWidth())
+        self.removeButton.setSizePolicy(sizePolicy)
         self.removeButton.setMinimumSize(QtCore.QSize(0, 35))
         self.removeButton.setObjectName("removeButton")
         self.gridLayout_2.addWidget(self.removeButton, 1, 0, 1, 1)
         self.clearButton = QtGui.QPushButton(companyItem)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.clearButton.sizePolicy().hasHeightForWidth())
+        self.clearButton.setSizePolicy(sizePolicy)
         self.clearButton.setMinimumSize(QtCore.QSize(0, 35))
         self.clearButton.setObjectName("clearButton")
         self.gridLayout_2.addWidget(self.clearButton, 1, 1, 1, 1)
         self.importButton = QtGui.QPushButton(companyItem)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.importButton.sizePolicy().hasHeightForWidth())
+        self.importButton.setSizePolicy(sizePolicy)
         self.importButton.setMinimumSize(QtCore.QSize(0, 35))
         self.importButton.setObjectName("importButton")
         self.gridLayout_2.addWidget(self.importButton, 1, 2, 1, 1)
@@ -316,6 +332,11 @@ class Ui_companyItem(object):
         spacerItem = QtGui.QSpacerItem(758, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.gridLayout_2.addItem(spacerItem, 3, 0, 1, 2)
         self.saveTableData = QtGui.QPushButton(companyItem)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.saveTableData.sizePolicy().hasHeightForWidth())
+        self.saveTableData.setSizePolicy(sizePolicy)
         self.saveTableData.setMinimumSize(QtCore.QSize(300, 35))
         self.saveTableData.setObjectName("saveTableData")
         self.gridLayout_2.addWidget(self.saveTableData, 3, 2, 1, 1)

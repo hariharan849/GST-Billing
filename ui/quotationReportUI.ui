@@ -29,7 +29,7 @@
       <string/>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -55,7 +55,7 @@
            </size>
           </property>
           <property name="placeholderText">
-           <string>Enter Vendor Name</string>
+           <string>Enter Customer Name</string>
           </property>
          </widget>
         </item>
@@ -299,7 +299,11 @@
     </layout>
    </item>
    <item row="3" column="0" colspan="2">
-    <widget class="QuotationReportTable" name="quotationReportTable"/>
+    <widget class="QuotationReportTable" name="quotationReportTable">
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item row="4" column="0">
     <spacer name="horizontalSpacer">

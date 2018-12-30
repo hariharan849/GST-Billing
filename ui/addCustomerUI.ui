@@ -42,7 +42,7 @@
       <string>Customer Details</string>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0" colspan="2">
@@ -89,6 +89,12 @@
           </item>
           <item>
            <widget class="QLabel" name="codeMandLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">QLabel { color : red; }</string>
             </property>
@@ -148,6 +154,12 @@
           </item>
           <item>
            <widget class="QLabel" name="nameMandLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">QLabel { color : red; }</string>
             </property>
@@ -201,6 +213,12 @@
           </item>
           <item>
            <widget class="QLabel" name="addressMandLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">QLabel { color : red; }</string>
             </property>
@@ -254,6 +272,12 @@
           </item>
           <item>
            <widget class="QLabel" name="gstinMandLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">QLabel { color : red; }</string>
             </property>
@@ -307,6 +331,12 @@
           </item>
           <item>
            <widget class="QLabel" name="stateMandLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">QLabel { color : red; }</string>
             </property>
@@ -360,6 +390,12 @@
           </item>
           <item>
            <widget class="QLabel" name="contactMandLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="styleSheet">
              <string notr="true">QLabel { color : red; }</string>
             </property>
@@ -424,7 +460,7 @@
         <string>Search </string>
        </property>
        <property name="checkable">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">

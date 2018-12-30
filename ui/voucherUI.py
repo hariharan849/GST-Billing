@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\voucherUI.ui'
 #
-# Created: Tue Oct 02 10:09:30 2018
+# Created: Sat Nov 24 16:34:32 2018
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,8 +12,10 @@ from PySide import QtCore, QtGui
 class Ui_Voucher(object):
     def setupUi(self, Voucher):
         Voucher.setObjectName("Voucher")
-        Voucher.resize(1385, 751)
-        self.gridLayout_3 = QtGui.QGridLayout(Voucher)
+        Voucher.resize(1385, 753)
+        self.gridLayout_5 = QtGui.QGridLayout(Voucher)
+        self.gridLayout_5.setObjectName("gridLayout_5")
+        self.gridLayout_3 = QtGui.QGridLayout()
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.widget = Header(Voucher)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Minimum)
@@ -30,7 +32,8 @@ class Ui_Voucher(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.inputGroupBox.sizePolicy().hasHeightForWidth())
         self.inputGroupBox.setSizePolicy(sizePolicy)
-        self.inputGroupBox.setCheckable(True)
+        self.inputGroupBox.setMinimumSize(QtCore.QSize(434, 0))
+        self.inputGroupBox.setCheckable(False)
         self.inputGroupBox.setObjectName("inputGroupBox")
         self.gridLayout = QtGui.QGridLayout(self.inputGroupBox)
         self.gridLayout.setObjectName("gridLayout")
@@ -223,6 +226,7 @@ class Ui_Voucher(object):
         self.gridLayout.addWidget(self.discardButton, 7, 1, 1, 1)
         self.gridLayout_3.addWidget(self.inputGroupBox, 1, 0, 1, 1)
         self.gridLayout_2 = QtGui.QGridLayout()
+        self.gridLayout_2.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.groupBox = QtGui.QGroupBox(Voucher)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
@@ -231,7 +235,7 @@ class Ui_Voucher(object):
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
         self.groupBox.setSizePolicy(sizePolicy)
         self.groupBox.setMinimumSize(QtCore.QSize(0, 100))
-        self.groupBox.setCheckable(True)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.gridLayout_4 = QtGui.QGridLayout(self.groupBox)
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -325,14 +329,29 @@ class Ui_Voucher(object):
         self.gridLayout_4.addLayout(self.horizontalLayout_2, 1, 0, 1, 1)
         self.gridLayout_2.addWidget(self.groupBox, 0, 0, 1, 3)
         self.removeButton = QtGui.QPushButton(Voucher)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.removeButton.sizePolicy().hasHeightForWidth())
+        self.removeButton.setSizePolicy(sizePolicy)
         self.removeButton.setMinimumSize(QtCore.QSize(0, 35))
         self.removeButton.setObjectName("removeButton")
         self.gridLayout_2.addWidget(self.removeButton, 1, 0, 1, 1)
         self.clearButton = QtGui.QPushButton(Voucher)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.clearButton.sizePolicy().hasHeightForWidth())
+        self.clearButton.setSizePolicy(sizePolicy)
         self.clearButton.setMinimumSize(QtCore.QSize(0, 35))
         self.clearButton.setObjectName("clearButton")
         self.gridLayout_2.addWidget(self.clearButton, 1, 1, 1, 1)
         self.importButton = QtGui.QPushButton(Voucher)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.importButton.sizePolicy().hasHeightForWidth())
+        self.importButton.setSizePolicy(sizePolicy)
         self.importButton.setMinimumSize(QtCore.QSize(0, 35))
         self.importButton.setObjectName("importButton")
         self.gridLayout_2.addWidget(self.importButton, 1, 2, 1, 1)
@@ -349,7 +368,7 @@ class Ui_Voucher(object):
         spacerItem = QtGui.QSpacerItem(500, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_4.addItem(spacerItem)
         self.saveTableButton = QtGui.QPushButton(Voucher)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Fixed)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.saveTableButton.sizePolicy().hasHeightForWidth())
@@ -359,6 +378,7 @@ class Ui_Voucher(object):
         self.horizontalLayout_4.addWidget(self.saveTableButton)
         self.gridLayout_2.addLayout(self.horizontalLayout_4, 3, 0, 1, 3)
         self.horizontalLayout_3 = QtGui.QHBoxLayout()
+        self.horizontalLayout_3.setSizeConstraint(QtGui.QLayout.SetMaximumSize)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.totalAmountLabel = QtGui.QLabel(Voucher)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Preferred)
@@ -380,6 +400,7 @@ class Ui_Voucher(object):
         self.horizontalLayout_3.addWidget(self.totalAmountValue)
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 4, 0, 1, 3)
         self.gridLayout_3.addLayout(self.gridLayout_2, 1, 1, 1, 1)
+        self.gridLayout_5.addLayout(self.gridLayout_3, 0, 0, 1, 1)
 
         self.retranslateUi(Voucher)
         self.paymentValue.setCurrentIndex(-1)
